@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>InsightsLake 工艺分析平台</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="background-glow"></div>
+    <div class="noise"></div>
+
+    <header class="hero">
+      <p class="eyebrow">Semiconductor Process Analytics</p>
+      <h1>InsightsLake · 工艺分析站点</h1>
+      <p>
+        面向制造与工艺团队的静态分析门户，提供工艺排行、晶体管密度估算与良率预测，支持快速对比不同工艺路线的可制造性。
+      </p>
+    </header>
+
+    <main>
+      <section class="panel">
+        <h2>已有分析报告</h2>
+        <div class="report-grid">
+          <a class="report-card" href="reports/foundry_process_density_public_v0_3.xlsx" target="_blank" rel="noopener">
+            <h3>工艺密度公共版报告 v0.3</h3>
+            <p>原始统计与节点级密度抽样，适合用于横向对比。</p>
+            <span>下载 XLSX</span>
+          </a>
+          <a class="report-card" href="reports/foundry_cgp_ch_density_sram_public_v0_3.csv" target="_blank" rel="noopener">
+            <h3>SRAM 工艺密度明细 v0.3</h3>
+            <p>工艺与 SRAM 密度相关性数据，适合做趋势核对。</p>
+            <span>下载 CSV</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>工艺排行</h2>
+          <div class="controls">
+            <label>
+              排序维度
+              <select id="sortMetric">
+                <option value="score">综合评分</option>
+                <option value="density">密度(相对值)</option>
+                <option value="yield">良率(%)</option>
+                <option value="cost">成本指数(越低越好)</option>
+                <option value="cycle">制程周期(天, 越快越好)</option>
+              </select>
+            </label>
+            <label>
+              显示前
+              <select id="topCount">
+                <option value="3">3 条</option>
+                <option value="5" selected>5 条</option>
+                <option value="10">10 条</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>排名</th>
+                <th>工艺</th>
+                <th>节点</th>
+                <th>密度(相对)</th>
+                <th>良率(%)</th>
+                <th>成本指数</th>
+                <th>周期(天)</th>
+                <th>综合评分</th>
+              </tr>
+            </thead>
+            <tbody id="rankingBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel grid-2">
+        <article>
+          <h2>密度计算器</h2>
+          <p>估算指定晶圆与芯片尺寸下，每片晶圆可切割的晶粒数量与有效产能。</p>
+          <form id="densityForm" autocomplete="off">
+            <label>
+              晶圆直径（mm）
+              <input type="number" id="waferDiameter" min="100" max="500" step="10" value="300" />
+            </label>
+            <label>
+              晶粒长（mm）
+              <input type="number" id="dieLength" min="0.1" step="0.05" value="8" />
+            </label>
+            <label>
+              晶粒宽（mm）
+              <input type="number" id="dieWidth" min="0.1" step="0.05" value="8" />
+            </label>
+            <label>
+              工艺良率（0-1）
+              <input type="number" id="yieldRate" min="0" max="1" step="0.01" value="0.92" />
+            </label>
+            <label>
+              缺陷密度 D0（defects/cm²）
+              <input type="number" id="defectDensity" min="0" step="0.001" value="0.08" />
+            </label>
+            <label>
+              月晶圆片数（片）
+              <input type="number" id="waferPerMonth" min="1" step="1" value="1200" />
+            </label>
+            <button type="submit">开始计算</button>
+          </form>
+          <div class="result" id="densityResult">待计算，输入参数后点击按钮。</div>
+        </article>
+
+        <article>
+          <h2>良率分析器</h2>
+          <p>基于简单缺陷模型，快速预估每月可交付的合格晶粒量与产能波动。</p>
+          <form id="yieldForm" autocomplete="off">
+            <label>
+              晶粒面积（mm²）
+              <input type="number" id="yieldDieArea" min="0.1" step="0.1" value="64" />
+            </label>
+            <label>
+              每片理论晶粒数（上一步估算）
+              <input type="number" id="yieldDiesPerWafer" min="1" step="1" value="800" />
+            </label>
+            <label>
+              缺陷密度（defects/cm²）
+              <input type="number" id="yieldDefectDensity" min="0" step="0.001" value="0.08" />
+            </label>
+            <label>
+              集群因子 k（越大越乐观）
+              <input type="number" id="clusteringK" min="0.1" step="0.1" value="1.2" />
+            </label>
+            <label>
+              月晶圆片数（片）
+              <input type="number" id="yieldWaferPerMonth" min="1" step="1" value="1200" />
+            </label>
+            <label>
+              目标良率（%）
+              <input type="number" id="targetYield" min="1" max="100" step="0.1" value="90" />
+            </label>
+            <button type="submit">开始分析</button>
+          </form>
+          <div class="result" id="yieldResult">待计算，输入参数后点击按钮。</div>
+        </article>
+      </section>
+    </main>
+
+    <footer>
+      <p>InsightsLake · Semiconductor Process Intelligence</p>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>
