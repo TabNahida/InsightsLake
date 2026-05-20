@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Yield Analyzer | InsightsLake</title>
+    <meta name="description" content="Wafer yield calculator and wafer cut map visualization." />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+  </head>
+  <body data-page="yield">
+    <div class="shell-grid" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <a class="brand" href="index.html" aria-label="InsightsLake">
+        <span class="brand-mark">IL</span>
+        <span>
+          <strong>InsightsLake</strong>
+          <small data-i18n="brand.subtitle">Process Intelligence</small>
+        </span>
+      </a>
+      <nav class="nav-links" aria-label="Primary navigation">
+        <a data-nav="home" data-i18n="nav.home" href="index.html">Overview</a>
+        <a data-nav="ranking" data-i18n="nav.ranking" href="ranking.html">Ranking</a>
+        <a data-nav="density" data-i18n="nav.density" href="density.html">Density</a>
+        <a data-nav="yield" data-i18n="nav.yield" href="yield.html">Yield</a>
+        <a data-nav="reports" data-i18n="nav.reports" href="reports.html">Reports</a>
+      </nav>
+      <div class="lang-switch" aria-label="Language">
+        <button type="button" data-lang="en">EN</button>
+        <button type="button" data-lang="zh">中文</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="page-hero">
+        <p class="eyebrow" data-i18n="yield.eyebrow">YIELD ANALYZER</p>
+        <h1 data-i18n="yield.title">Model die yield and wafer output</h1>
+        <p class="lead" data-i18n="yield.lead">
+          Compare common yield models and inspect a wafer cut map that shows gross dies, good dies, and defect losses.
+        </p>
+      </section>
+
+      <section class="tool-band page-section">
+        <div class="tool-grid yield-grid">
+          <form id="yieldForm" class="tool-panel">
+            <label>
+              <span>Die area mm2</span>
+              <input id="dieArea" type="number" min="1" step="1" value="100" />
+            </label>
+            <label>
+              <span>Defect density /cm2</span>
+              <input id="defectDensity" type="number" min="0" step="0.01" value="0.2" />
+            </label>
+            <label>
+              <span>Yield model</span>
+              <select id="yieldModel">
+                <option value="poisson">Poisson</option>
+                <option value="murphy">Murphy</option>
+                <option value="negative">Negative binomial</option>
+              </select>
+            </label>
+            <label>
+              <span data-i18n="yield.alpha">Clustering alpha</span>
+              <input id="clusterAlpha" type="number" min="0.1" step="0.1" value="3" />
+            </label>
+            <label>
+              <span>Wafer diameter mm</span>
+              <select id="waferDiameter">
+                <option value="300">300</option>
+                <option value="200">200</option>
+              </select>
+            </label>
+            <label>
+              <span data-i18n="yield.wafersPerMonth">Wafers per month</span>
+              <input id="wafersPerMonth" type="number" min="0" step="100" value="10000" />
+            </label>
+          </form>
+
+          <div class="result-panel yield-results">
+            <article>
+              <small>Die yield</small>
+              <strong id="yieldPercent">--</strong>
+              <span>%</span>
+            </article>
+            <article>
+              <small>Gross die / wafer</small>
+              <strong id="grossDie">--</strong>
+              <span>die</span>
+            </article>
+            <article>
+              <small>Good die / wafer</small>
+              <strong id="goodDie">--</strong>
+              <span>die</span>
+            </article>
+            <article>
+              <small>Good die / month</small>
+              <strong id="monthlyGoodDie">--</strong>
+              <span>die</span>
+            </article>
+            <div class="yield-chart-wrap">
+              <canvas id="yieldCanvas" width="820" height="280" aria-label="Yield curve by die area"></canvas>
+            </div>
+            <div class="wafer-map-wrap">
+              <canvas id="waferCutCanvas" width="820" height="520" aria-label="Wafer cut map"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>InsightsLake</span>
+      <span data-i18n="footer.note">Public-source estimates for process comparison and early planning.</span>
+    </footer>
+
+    <script src="assets/js/process-data.js"></script>
+    <script src="assets/js/app.js" defer></script>
+  </body>
+</html>

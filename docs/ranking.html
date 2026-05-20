@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ranking | InsightsLake</title>
+    <meta name="description" content="Semiconductor process and library density ranking." />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+  </head>
+  <body data-page="ranking">
+    <div class="shell-grid" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <a class="brand" href="index.html" aria-label="InsightsLake">
+        <span class="brand-mark">IL</span>
+        <span>
+          <strong>InsightsLake</strong>
+          <small data-i18n="brand.subtitle">Process Intelligence</small>
+        </span>
+      </a>
+      <nav class="nav-links" aria-label="Primary navigation">
+        <a data-nav="home" data-i18n="nav.home" href="index.html">Overview</a>
+        <a data-nav="ranking" data-i18n="nav.ranking" href="ranking.html">Ranking</a>
+        <a data-nav="density" data-i18n="nav.density" href="density.html">Density</a>
+        <a data-nav="yield" data-i18n="nav.yield" href="yield.html">Yield</a>
+        <a data-nav="reports" data-i18n="nav.reports" href="reports.html">Reports</a>
+      </nav>
+      <div class="lang-switch" aria-label="Language">
+        <button type="button" data-lang="en">EN</button>
+        <button type="button" data-lang="zh">中文</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="page-hero">
+        <p class="eyebrow" data-i18n="ranking.eyebrow">PROCESS AND LIBRARY RANKING</p>
+        <h1 data-i18n="ranking.title">Density ranking</h1>
+        <p class="lead" data-i18n="ranking.lead">
+          Default ranking shows every row with available density data and automatically skips missing density values.
+        </p>
+      </section>
+
+      <section class="workbench-band page-section">
+        <div class="control-rail ranking-controls">
+          <label>
+            <span data-i18n="ranking.metric">Metric</span>
+            <select id="metricSelect"></select>
+          </label>
+          <label>
+            <span data-i18n="ranking.foundry">Foundry</span>
+            <select id="foundryFilter"></select>
+          </label>
+          <label>
+            <span data-i18n="ranking.library">Library class</span>
+            <select id="libraryFilter"></select>
+          </label>
+          <label>
+            <span data-i18n="ranking.rows">Rows</span>
+            <select id="rowLimit">
+              <option value="all" data-i18n="ranking.allRows">All rows</option>
+              <option value="10">Top 10</option>
+              <option value="20">Top 20</option>
+              <option value="30">Top 30</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="ranking-layout">
+          <div class="rank-panel">
+            <div class="panel-head">
+              <h3 id="rankingTitle">Logic density ranking</h3>
+              <span id="rankingCount">--</span>
+            </div>
+            <div id="rankingList" class="ranking-list"></div>
+          </div>
+          <div class="table-panel">
+            <div class="panel-head">
+              <h3 data-i18n="ranking.tableTitle">Dataset rows</h3>
+              <span id="tableCount">--</span>
+            </div>
+            <div class="data-table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Foundry</th>
+                    <th>Node</th>
+                    <th>Library</th>
+                    <th>CPP</th>
+                    <th>Height</th>
+                    <th>Logic</th>
+                    <th>SRAM</th>
+                    <th>Confidence</th>
+                  </tr>
+                </thead>
+                <tbody id="dataTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>InsightsLake</span>
+      <span data-i18n="footer.note">Public-source estimates for process comparison and early planning.</span>
+    </footer>
+
+    <script src="assets/js/process-data.js"></script>
+    <script src="assets/js/app.js" defer></script>
+  </body>
+</html>

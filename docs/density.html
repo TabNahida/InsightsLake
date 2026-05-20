@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Density Calculator | InsightsLake</title>
+    <meta name="description" content="Logic and SRAM density calculator for semiconductor process planning." />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+  </head>
+  <body data-page="density">
+    <div class="shell-grid" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <a class="brand" href="index.html" aria-label="InsightsLake">
+        <span class="brand-mark">IL</span>
+        <span>
+          <strong>InsightsLake</strong>
+          <small data-i18n="brand.subtitle">Process Intelligence</small>
+        </span>
+      </a>
+      <nav class="nav-links" aria-label="Primary navigation">
+        <a data-nav="home" data-i18n="nav.home" href="index.html">Overview</a>
+        <a data-nav="ranking" data-i18n="nav.ranking" href="ranking.html">Ranking</a>
+        <a data-nav="density" data-i18n="nav.density" href="density.html">Density</a>
+        <a data-nav="yield" data-i18n="nav.yield" href="yield.html">Yield</a>
+        <a data-nav="reports" data-i18n="nav.reports" href="reports.html">Reports</a>
+      </nav>
+      <div class="lang-switch" aria-label="Language">
+        <button type="button" data-lang="en">EN</button>
+        <button type="button" data-lang="zh">中文</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="page-hero">
+        <p class="eyebrow" data-i18n="density.eyebrow">DENSITY CALCULATOR</p>
+        <h1 data-i18n="density.title">Estimate logic and SRAM density</h1>
+        <p class="lead" data-i18n="density.lead">
+          Start from a public sample or enter CPP/CGP and cell height directly to compare estimated density with a target.
+        </p>
+      </section>
+
+      <section class="tool-band page-section">
+        <div class="tool-grid">
+          <form id="densityForm" class="tool-panel">
+            <label class="wide">
+              <span data-i18n="density.reference">Reference sample</span>
+              <select id="presetSelect"></select>
+            </label>
+            <label>
+              <span>CPP/CGP nm</span>
+              <input id="cppInput" type="number" min="1" step="0.1" value="51" />
+            </label>
+            <label>
+              <span>Cell height nm</span>
+              <input id="heightInput" type="number" min="1" step="0.1" value="210" />
+            </label>
+            <label>
+              <span>Diffusion break</span>
+              <select id="breakModel">
+                <option value="sdb">SDB / CPODE</option>
+                <option value="ddb">DDB</option>
+              </select>
+            </label>
+            <label>
+              <span data-i18n="density.scale">Library scale factor</span>
+              <input id="libraryScale" type="number" min="0.2" max="2" step="0.01" value="1" />
+            </label>
+            <label>
+              <span>SRAM bitcell um2</span>
+              <input id="sramCellInput" type="number" min="0.001" step="0.001" value="0.021" />
+            </label>
+            <label>
+              <span data-i18n="density.target">Target logic density</span>
+              <input id="targetDensity" type="number" min="1" step="1" value="140" />
+            </label>
+          </form>
+
+          <div class="result-panel density-results">
+            <article>
+              <small data-i18n="density.estimatedLogic">Estimated logic density</small>
+              <strong id="calcLogicDensity">--</strong>
+              <span>MTr/mm2</span>
+            </article>
+            <article>
+              <small data-i18n="density.idealSram">Ideal SRAM density</small>
+              <strong id="calcSramDensity">--</strong>
+              <span>Mb/mm2</span>
+            </article>
+            <article>
+              <small data-i18n="density.targetGap">Target gap</small>
+              <strong id="calcGap">--</strong>
+              <span>vs target</span>
+            </article>
+            <div class="formula-box">
+              <span id="formulaLabel">SDB_FACTOR / (CPP x Height)</span>
+              <div class="scale-track">
+                <span id="densityNeedle"></span>
+              </div>
+            </div>
+            <div id="nearestMatch" class="nearest-match"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>InsightsLake</span>
+      <span data-i18n="footer.note">Public-source estimates for process comparison and early planning.</span>
+    </footer>
+
+    <script src="assets/js/process-data.js"></script>
+    <script src="assets/js/app.js" defer></script>
+  </body>
+</html>

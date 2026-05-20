@@ -73,7 +73,7 @@ select {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
+  gap: 16px;
   min-height: 76px;
   padding: 14px max(24px, calc((100vw - 1240px) / 2));
   border-bottom: 1px solid rgba(128, 185, 160, 0.22);
@@ -121,10 +121,12 @@ select {
   flex-wrap: wrap;
   gap: 8px;
   justify-content: flex-end;
+  margin-left: auto;
 }
 
 .nav-links a,
-.command {
+.command,
+.lang-switch button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -139,9 +141,26 @@ select {
 }
 
 .nav-links a:hover,
-.command:hover {
+.nav-links a.active,
+.command:hover,
+.lang-switch button:hover,
+.lang-switch button.active {
   border-color: var(--line-strong);
   color: var(--text);
+}
+
+.lang-switch {
+  display: inline-flex;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.lang-switch button {
+  cursor: pointer;
+}
+
+.lang-switch button.active {
+  background: rgba(70, 239, 180, 0.14);
 }
 
 .command.primary {
@@ -213,6 +232,24 @@ h3 {
   margin: 22px 0 0;
   color: var(--soft);
   font-size: 1.06rem;
+}
+
+.page-hero {
+  padding-top: 72px;
+  padding-bottom: 36px;
+}
+
+.page-hero h1 {
+  max-width: 860px;
+  font-size: 3.5rem;
+}
+
+.page-hero .lead {
+  max-width: 760px;
+}
+
+.page-section {
+  padding-top: 26px;
 }
 
 .report-actions {
@@ -375,6 +412,10 @@ h3 {
   grid-template-columns: 1.25fr 1fr 1fr 140px;
   gap: 10px;
   margin-bottom: 14px;
+}
+
+.ranking-controls {
+  grid-template-columns: 1.25fr 1fr 1fr 160px;
 }
 
 label {
@@ -599,7 +640,8 @@ td {
 
 .formula-box,
 .nearest-match,
-.yield-chart-wrap {
+.yield-chart-wrap,
+.wafer-map-wrap {
   grid-column: 1 / -1;
   border: 1px solid rgba(143, 171, 158, 0.18);
   border-radius: 8px;
@@ -633,16 +675,30 @@ td {
   font-size: 0.88rem;
 }
 
-.yield-chart-wrap {
+.yield-chart-wrap,
+.wafer-map-wrap {
   overflow: hidden;
-  min-height: 280px;
   padding: 10px;
+}
+
+.yield-chart-wrap {
+  min-height: 280px;
+}
+
+.wafer-map-wrap {
+  min-height: 420px;
 }
 
 #yieldCanvas {
   display: block;
   width: 100%;
   height: 280px;
+}
+
+#waferCutCanvas {
+  display: block;
+  width: 100%;
+  height: 420px;
 }
 
 .reports-band {
@@ -739,6 +795,15 @@ td {
 
   .nav-links {
     justify-content: flex-start;
+    margin-left: 0;
+  }
+
+  .lang-switch {
+    width: 100%;
+  }
+
+  .lang-switch button {
+    flex: 1;
   }
 
   .overview-band {
@@ -752,6 +817,10 @@ td {
 
   h1 {
     font-size: 2.45rem;
+  }
+
+  .page-hero h1 {
+    font-size: 2.35rem;
   }
 
   h2 {
@@ -775,6 +844,10 @@ td {
   .wafer-stage,
   #waferCanvas {
     min-height: 340px;
+  }
+
+  #waferCutCanvas {
+    height: 360px;
   }
 
   .rank-row {

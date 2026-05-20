@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Reports | InsightsLake</title>
+    <meta name="description" content="Source reports and public dataset downloads." />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+  </head>
+  <body data-page="reports">
+    <div class="shell-grid" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <a class="brand" href="index.html" aria-label="InsightsLake">
+        <span class="brand-mark">IL</span>
+        <span>
+          <strong>InsightsLake</strong>
+          <small data-i18n="brand.subtitle">Process Intelligence</small>
+        </span>
+      </a>
+      <nav class="nav-links" aria-label="Primary navigation">
+        <a data-nav="home" data-i18n="nav.home" href="index.html">Overview</a>
+        <a data-nav="ranking" data-i18n="nav.ranking" href="ranking.html">Ranking</a>
+        <a data-nav="density" data-i18n="nav.density" href="density.html">Density</a>
+        <a data-nav="yield" data-i18n="nav.yield" href="yield.html">Yield</a>
+        <a data-nav="reports" data-i18n="nav.reports" href="reports.html">Reports</a>
+      </nav>
+      <div class="lang-switch" aria-label="Language">
+        <button type="button" data-lang="en">EN</button>
+        <button type="button" data-lang="zh">中文</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="page-hero">
+        <p class="eyebrow" data-i18n="reports.eyebrow">SOURCE REPORTS</p>
+        <h1 data-i18n="reports.title">Reports and data exports</h1>
+        <p class="lead" data-i18n="reports.lead">
+          Download the workbook and normalized CSV used by the interactive pages.
+        </p>
+      </section>
+
+      <section class="reports-band page-section">
+        <div class="report-grid">
+          <a class="report-card" href="assets/data/foundry_process_density_public_v0_3.xlsx">
+            <span>XLSX</span>
+            <strong>Foundry Process Density Public v0.3</strong>
+            <small data-i18n="reports.xlsxDesc">Workbook with foundry sheets, comparison views, source index, and dashboard.</small>
+          </a>
+          <a class="report-card" href="assets/data/foundry_cgp_ch_density_sram_public_v0_3.csv">
+            <span>CSV</span>
+            <strong>CGP / CH / Density / SRAM Dataset</strong>
+            <small data-i18n="reports.csvDesc">Normalized data source for the static site and downstream scripts.</small>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>InsightsLake</span>
+      <span data-i18n="footer.note">Public-source estimates for process comparison and early planning.</span>
+    </footer>
+
+    <script src="assets/js/process-data.js"></script>
+    <script src="assets/js/app.js" defer></script>
+  </body>
+</html>
