@@ -18,13 +18,17 @@
       </div>
       <h1 data-i18n="heroTitle">InsightsLake · 工艺分析平台</h1>
       <p data-i18n="heroDesc">
-        面向制造与工艺团队的静态分析门户，提供工艺与标准库排行、密度计算器和良率分析器，支持快速筛选和决策。
+        面向制造与工艺团队的静态分析门户，采用你提供的 CSV 数据驱动排行，支持中英文切换、工艺排行与库排行。
       </p>
       <div class="hero-metrics">
-        <div><strong data-i18n="heroStat1n">6</strong> <span data-i18n="heroStat1">个内建工艺样本</span></div>
-        <div><strong data-i18n="heroStat2n">8</strong> <span data-i18n="heroStat2">条标准库样本</span></div>
+        <div><strong data-i18n="heroStat1n">69</strong> <span data-i18n="heroStat1">条CSV样本</span></div>
+        <div><strong data-i18n="heroStat2n">2</strong> <span data-i18n="heroStat2">个计算器独立页面</span></div>
         <div><strong data-i18n="heroStat3n">0</strong> <span data-i18n="heroStat3">后端依赖</span></div>
       </div>
+      <nav class="hero-links">
+        <a class="ghost-btn" href="density.html" data-i18n="goDensity">去密度计算器</a>
+        <a class="ghost-btn" href="yield.html" data-i18n="goYield">去良率分析器</a>
+      </nav>
     </header>
 
     <main>
@@ -60,12 +64,11 @@
             <label>
               <span data-i18n="rankMetric">排序指标</span>
               <select id="sortMetric">
-                <option value="score" data-i18n="metricScore">综合评分</option>
-                <option value="density" data-i18n="metricDensity">密度</option>
-                <option value="yield" data-i18n="metricYield">良率</option>
-                <option value="cost" data-i18n="metricCost">成本指数</option>
-                <option value="cycle" data-i18n="metricCycle">制程周期</option>
-                <option value="libraryQuality" data-i18n="metricLibraryQuality">库质量</option>
+                <option value="logicDensity" data-i18n="metricLogicDensity">逻辑密度</option>
+                <option value="sramDensity" data-i18n="metricSramDensity">SRAM密度</option>
+                <option value="cppNm" data-i18n="metricCpp">CPP（nm）</option>
+                <option value="cellHeight" data-i18n="metricCellHeight">Cell Height（nm）</option>
+                <option value="confidence" data-i18n="metricConfidence">置信度</option>
               </select>
             </label>
             <label>
@@ -80,13 +83,13 @@
               <select id="topCount">
                 <option value="3">3</option>
                 <option value="5" selected>5</option>
-                <option value="8">8</option>
                 <option value="10">10</option>
+                <option value="20">20</option>
               </select>
             </label>
           </div>
         </div>
-        <p class="muted" id="rankingHint" data-i18n="rankingHint">按排序指标动态计算综合评分并渲染 TOPN。</p>
+        <p class="muted" id="rankingHint" data-i18n="rankingHint">排行榜使用 CSV 的公开列直接驱动，不使用手工构造的样本。</p>
         <div class="table-wrap">
           <table>
             <thead id="rankingHead">
@@ -94,89 +97,18 @@
                 <th data-i18n="thRank">排名</th>
                 <th data-i18n="thName">名称</th>
                 <th data-i18n="thNode">节点</th>
-                <th data-i18n="thDensity">密度</th>
-                <th data-i18n="thYield">良率</th>
-                <th data-i18n="thCost">成本指数</th>
-                <th data-i18n="thCycle">周期</th>
-                <th data-i18n="thScore">综合评分</th>
-                <th data-i18n="thLibrary">库质量</th>
+                <th data-i18n="thVariant">变体/库类</th>
+                <th data-i18n="thLogicDensity">逻辑密度（MTr/mm²）</th>
+                <th data-i18n="thSramDensity">SRAM密度（Mb/mm²）</th>
+                <th data-i18n="thCpp">CPP（nm）</th>
+                <th data-i18n="thCellHeight">Cell Height（nm）</th>
+                <th data-i18n="thConfidence">置信度</th>
+                <th data-i18n="thMetricValue">当前指标值</th>
               </tr>
             </thead>
             <tbody id="rankingBody"></tbody>
           </table>
         </div>
-      </section>
-
-      <section class="panel grid-2">
-        <article class="glass-card">
-          <h2 data-i18n="densityTitle">密度计算器</h2>
-          <p data-i18n="densityDesc">估算晶圆可切分晶粒、有效良率与月度产能。</p>
-          <form id="densityForm" autocomplete="off">
-            <label>
-              <span data-i18n="densityWafer">晶圆直径（mm）</span>
-              <input type="number" id="waferDiameter" min="100" max="500" step="10" value="300" />
-            </label>
-            <label>
-              <span data-i18n="densityDieL">晶粒长（mm）</span>
-              <input type="number" id="dieLength" min="0.1" step="0.05" value="8" />
-            </label>
-            <label>
-              <span data-i18n="densityDieW">晶粒宽（mm）</span>
-              <input type="number" id="dieWidth" min="0.1" step="0.05" value="8" />
-            </label>
-            <label>
-              <span data-i18n="densityYieldRate">工艺良率（0-1）</span>
-              <input type="number" id="yieldRate" min="0" max="1" step="0.01" value="0.92" />
-            </label>
-            <label>
-              <span data-i18n="densityDefectDensity">缺陷密度 D0（defects/cm²）</span>
-              <input type="number" id="defectDensity" min="0" step="0.001" value="0.08" />
-            </label>
-            <label>
-              <span data-i18n="densityWaferPerMonth">月晶圆片数（片）</span>
-              <input type="number" id="waferPerMonth" min="1" step="1" value="1200" />
-            </label>
-            <button type="submit" class="primary-btn" data-i18n="btnRunDensity">开始计算</button>
-          </form>
-          <div class="result" id="densityResult" data-i18n="densityInitial">
-            待计算，输入参数后点击按钮。
-          </div>
-        </article>
-
-        <article class="glass-card">
-          <h2 data-i18n="yieldTitle">良率分析器</h2>
-          <p data-i18n="yieldDesc">基于缺陷模型，快速预估每月可交付的合格晶粒量与风险。</p>
-          <form id="yieldForm" autocomplete="off">
-            <label>
-              <span data-i18n="yieldDieArea">晶粒面积（mm²）</span>
-              <input type="number" id="yieldDieArea" min="0.1" step="0.1" value="64" />
-            </label>
-            <label>
-              <span data-i18n="yieldDiesPerWafer">每片理论晶粒数</span>
-              <input type="number" id="yieldDiesPerWafer" min="1" step="1" value="800" />
-            </label>
-            <label>
-              <span data-i18n="yieldDefectDensity">缺陷密度（defects/cm²）</span>
-              <input type="number" id="yieldDefectDensity" min="0" step="0.001" value="0.08" />
-            </label>
-            <label>
-              <span data-i18n="yieldK">集群因子 k（越高越乐观）</span>
-              <input type="number" id="clusteringK" min="0.1" step="0.1" value="1.2" />
-            </label>
-            <label>
-              <span data-i18n="yieldWaferPerMonth">月晶圆片数（片）</span>
-              <input type="number" id="yieldWaferPerMonth" min="1" step="1" value="1200" />
-            </label>
-            <label>
-              <span data-i18n="yieldTarget">目标良率（%）</span>
-              <input type="number" id="targetYield" min="1" max="100" step="0.1" value="90" />
-            </label>
-            <button type="submit" class="primary-btn" data-i18n="btnRunYield">开始分析</button>
-          </form>
-          <div class="result" id="yieldResult" data-i18n="yieldInitial">
-            待计算，输入参数后点击按钮。
-          </div>
-        </article>
       </section>
     </main>
 
@@ -184,6 +116,7 @@
       <p data-i18n="footer">InsightsLake · Semiconductor Process Intelligence</p>
     </footer>
 
+    <script src="i18n.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

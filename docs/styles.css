@@ -31,6 +31,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  letter-spacing: 0.01em;
 }
 
 .noise {
@@ -69,11 +70,27 @@ body {
 }
 
 .hero {
+  position: relative;
+  overflow: hidden;
+  z-index: 0;
   border: 1px solid rgba(149, 190, 255, 0.22);
   background: linear-gradient(136deg, rgba(15, 24, 52, 0.76), rgba(7, 12, 29, 0.55));
   border-radius: 20px;
   padding: 1.35rem 1.2rem;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 16px 36px var(--shadow-soft);
+  backdrop-filter: blur(6px);
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(120deg, rgba(93, 247, 203, 0.15), rgba(93, 164, 255, 0.08) 40%, transparent 68%),
+    repeating-linear-gradient(90deg, transparent 0 24px, rgba(93, 164, 255, 0.06) 24px 25px);
+  opacity: 0.5;
 }
 
 .hero-band {
@@ -81,6 +98,13 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
+}
+
+.hero-links {
+  margin-top: 0.9rem;
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
 }
 
 .eyebrow {
@@ -164,6 +188,9 @@ main {
   border-radius: 18px;
   padding: 1rem;
   box-shadow: 0 20px 38px rgba(3, 10, 27, 0.55);
+  position: relative;
+  animation: riseIn 0.45s ease both;
+  backdrop-filter: blur(4px);
 }
 
 h2 {
@@ -188,12 +215,13 @@ h2 {
   color: var(--text-main);
   position: relative;
   transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+  animation: riseIn 0.45s ease both;
 }
 
 .report-card:hover {
-  transform: translateY(-2px);
   border-color: rgba(93, 247, 203, 0.6);
   box-shadow: 0 12px 24px rgba(93, 247, 203, 0.15);
+  transform: translateY(-4px);
 }
 
 .report-card .chip {
@@ -269,8 +297,15 @@ input:focus {
 
 table {
   width: 100%;
-  min-width: 760px;
+  min-width: 1020px;
   border-collapse: collapse;
+}
+
+.table-wrap {
+  border: 1px solid rgba(95, 151, 255, 0.18);
+  border-radius: 12px;
+  overflow: auto;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02);
 }
 
 th,
@@ -285,10 +320,41 @@ td {
 th {
   color: #b8cbfb;
   font-weight: 500;
+  background: rgba(9, 16, 35, 0.9);
+  position: sticky;
+  top: 0;
 }
 
 tbody tr:hover {
   background: rgba(255, 255, 255, 0.05);
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes orbDrift {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(24px);
+  }
+}
+
+.orb-1 {
+  animation: orbDrift 18s ease-in-out infinite alternate;
+}
+
+.orb-2 {
+  animation: orbDrift 20s ease-in-out infinite alternate-reverse;
 }
 
 .grid-2 {
@@ -329,6 +395,22 @@ form {
   gap: 0.6rem;
 }
 
+.chart-wrap {
+  margin-top: 0.9rem;
+  border: 1px solid rgba(120, 180, 255, 0.22);
+  border-radius: 10px;
+  padding: 0.75rem;
+  background: rgba(3, 10, 24, 0.68);
+}
+
+#yieldChart {
+  width: 100%;
+  height: 320px;
+  border-radius: 8px;
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 footer {
   margin-top: 0.3rem;
   text-align: center;
@@ -347,5 +429,14 @@ footer {
 
   .hero {
     border-radius: 16px;
+  }
+
+  .hero-links {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .table-wrap {
+    border-radius: 10px;
   }
 }
