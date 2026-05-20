@@ -7,70 +7,99 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="background-glow"></div>
     <div class="noise"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
 
     <header class="hero">
-      <p class="eyebrow">Semiconductor Process Analytics</p>
-      <h1>InsightsLake · 工艺分析站点</h1>
-      <p>
-        面向制造与工艺团队的静态分析门户，提供工艺排行、晶体管密度估算与良率预测，支持快速对比不同工艺路线的可制造性。
+      <div class="hero-band">
+        <p class="eyebrow" data-i18n="eyebrow">Semiconductor Process Analytics</p>
+        <button id="langSwitch" class="ghost-btn" type="button" data-i18n="lang.en">English</button>
+      </div>
+      <h1 data-i18n="heroTitle">InsightsLake · 工艺分析平台</h1>
+      <p data-i18n="heroDesc">
+        面向制造与工艺团队的静态分析门户，提供工艺与标准库排行、密度计算器和良率分析器，支持快速筛选和决策。
       </p>
+      <div class="hero-metrics">
+        <div><strong data-i18n="heroStat1n">6</strong> <span data-i18n="heroStat1">个内建工艺样本</span></div>
+        <div><strong data-i18n="heroStat2n">8</strong> <span data-i18n="heroStat2">条标准库样本</span></div>
+        <div><strong data-i18n="heroStat3n">0</strong> <span data-i18n="heroStat3">后端依赖</span></div>
+      </div>
     </header>
 
     <main>
       <section class="panel">
-        <h2>已有分析报告</h2>
+        <h2><span data-i18n="reportTitle">已有分析报告</span></h2>
         <div class="report-grid">
           <a class="report-card" href="reports/foundry_process_density_public_v0_3.xlsx" target="_blank" rel="noopener">
-            <h3>工艺密度公共版报告 v0.3</h3>
-            <p>原始统计与节点级密度抽样，适合用于横向对比。</p>
-            <span>下载 XLSX</span>
+            <p class="chip" data-i18n="reportKind1">工艺密度报告</p>
+            <h3 data-i18n="report1Title">Foundry Process Density Report v0.3</h3>
+            <p data-i18n="report1Desc">工艺节点密度分布与可制造性指标汇总。</p>
+            <span data-i18n="reportDownloadXlsx">下载 XLSX</span>
           </a>
           <a class="report-card" href="reports/foundry_cgp_ch_density_sram_public_v0_3.csv" target="_blank" rel="noopener">
-            <h3>SRAM 工艺密度明细 v0.3</h3>
-            <p>工艺与 SRAM 密度相关性数据，适合做趋势核对。</p>
-            <span>下载 CSV</span>
+            <p class="chip" data-i18n="reportKind2">SRAM 库密度明细</p>
+            <h3 data-i18n="report2Title">SRAM Density Public v0.3</h3>
+            <p data-i18n="report2Desc">SRAM 相关工艺密度与工艺兼容性抽样。</p>
+            <span data-i18n="reportDownloadCsv">下载 CSV</span>
           </a>
         </div>
       </section>
 
       <section class="panel">
         <div class="panel-head">
-          <h2>工艺排行</h2>
+          <h2><span id="rankingTitle" data-i18n="rankingProcess">工艺排行</span></h2>
           <div class="controls">
             <label>
-              排序维度
-              <select id="sortMetric">
-                <option value="score">综合评分</option>
-                <option value="density">密度(相对值)</option>
-                <option value="yield">良率(%)</option>
-                <option value="cost">成本指数(越低越好)</option>
-                <option value="cycle">制程周期(天, 越快越好)</option>
+              <span data-i18n="rankType">排行类型</span>
+              <select id="rankType">
+                <option value="process" data-i18n="rankTypeProcess">工艺排行</option>
+                <option value="library" data-i18n="rankTypeLibrary">标准库排行</option>
               </select>
             </label>
             <label>
-              显示前
+              <span data-i18n="rankMetric">排序指标</span>
+              <select id="sortMetric">
+                <option value="score" data-i18n="metricScore">综合评分</option>
+                <option value="density" data-i18n="metricDensity">密度</option>
+                <option value="yield" data-i18n="metricYield">良率</option>
+                <option value="cost" data-i18n="metricCost">成本指数</option>
+                <option value="cycle" data-i18n="metricCycle">制程周期</option>
+                <option value="libraryQuality" data-i18n="metricLibraryQuality">库质量</option>
+              </select>
+            </label>
+            <label>
+              <span data-i18n="sortOrder">排序方向</span>
+              <select id="sortDirection">
+                <option value="desc" data-i18n="orderDesc">降序</option>
+                <option value="asc" data-i18n="orderAsc">升序</option>
+              </select>
+            </label>
+            <label>
+              <span data-i18n="rankTop">显示前</span>
               <select id="topCount">
-                <option value="3">3 条</option>
-                <option value="5" selected>5 条</option>
-                <option value="10">10 条</option>
+                <option value="3">3</option>
+                <option value="5" selected>5</option>
+                <option value="8">8</option>
+                <option value="10">10</option>
               </select>
             </label>
           </div>
         </div>
+        <p class="muted" id="rankingHint" data-i18n="rankingHint">按排序指标动态计算综合评分并渲染 TOPN。</p>
         <div class="table-wrap">
           <table>
-            <thead>
+            <thead id="rankingHead">
               <tr>
-                <th>排名</th>
-                <th>工艺</th>
-                <th>节点</th>
-                <th>密度(相对)</th>
-                <th>良率(%)</th>
-                <th>成本指数</th>
-                <th>周期(天)</th>
-                <th>综合评分</th>
+                <th data-i18n="thRank">排名</th>
+                <th data-i18n="thName">名称</th>
+                <th data-i18n="thNode">节点</th>
+                <th data-i18n="thDensity">密度</th>
+                <th data-i18n="thYield">良率</th>
+                <th data-i18n="thCost">成本指数</th>
+                <th data-i18n="thCycle">周期</th>
+                <th data-i18n="thScore">综合评分</th>
+                <th data-i18n="thLibrary">库质量</th>
               </tr>
             </thead>
             <tbody id="rankingBody"></tbody>
@@ -79,76 +108,80 @@
       </section>
 
       <section class="panel grid-2">
-        <article>
-          <h2>密度计算器</h2>
-          <p>估算指定晶圆与芯片尺寸下，每片晶圆可切割的晶粒数量与有效产能。</p>
+        <article class="glass-card">
+          <h2 data-i18n="densityTitle">密度计算器</h2>
+          <p data-i18n="densityDesc">估算晶圆可切分晶粒、有效良率与月度产能。</p>
           <form id="densityForm" autocomplete="off">
             <label>
-              晶圆直径（mm）
+              <span data-i18n="densityWafer">晶圆直径（mm）</span>
               <input type="number" id="waferDiameter" min="100" max="500" step="10" value="300" />
             </label>
             <label>
-              晶粒长（mm）
+              <span data-i18n="densityDieL">晶粒长（mm）</span>
               <input type="number" id="dieLength" min="0.1" step="0.05" value="8" />
             </label>
             <label>
-              晶粒宽（mm）
+              <span data-i18n="densityDieW">晶粒宽（mm）</span>
               <input type="number" id="dieWidth" min="0.1" step="0.05" value="8" />
             </label>
             <label>
-              工艺良率（0-1）
+              <span data-i18n="densityYieldRate">工艺良率（0-1）</span>
               <input type="number" id="yieldRate" min="0" max="1" step="0.01" value="0.92" />
             </label>
             <label>
-              缺陷密度 D0（defects/cm²）
+              <span data-i18n="densityDefectDensity">缺陷密度 D0（defects/cm²）</span>
               <input type="number" id="defectDensity" min="0" step="0.001" value="0.08" />
             </label>
             <label>
-              月晶圆片数（片）
+              <span data-i18n="densityWaferPerMonth">月晶圆片数（片）</span>
               <input type="number" id="waferPerMonth" min="1" step="1" value="1200" />
             </label>
-            <button type="submit">开始计算</button>
+            <button type="submit" class="primary-btn" data-i18n="btnRunDensity">开始计算</button>
           </form>
-          <div class="result" id="densityResult">待计算，输入参数后点击按钮。</div>
+          <div class="result" id="densityResult" data-i18n="densityInitial">
+            待计算，输入参数后点击按钮。
+          </div>
         </article>
 
-        <article>
-          <h2>良率分析器</h2>
-          <p>基于简单缺陷模型，快速预估每月可交付的合格晶粒量与产能波动。</p>
+        <article class="glass-card">
+          <h2 data-i18n="yieldTitle">良率分析器</h2>
+          <p data-i18n="yieldDesc">基于缺陷模型，快速预估每月可交付的合格晶粒量与风险。</p>
           <form id="yieldForm" autocomplete="off">
             <label>
-              晶粒面积（mm²）
+              <span data-i18n="yieldDieArea">晶粒面积（mm²）</span>
               <input type="number" id="yieldDieArea" min="0.1" step="0.1" value="64" />
             </label>
             <label>
-              每片理论晶粒数（上一步估算）
+              <span data-i18n="yieldDiesPerWafer">每片理论晶粒数</span>
               <input type="number" id="yieldDiesPerWafer" min="1" step="1" value="800" />
             </label>
             <label>
-              缺陷密度（defects/cm²）
+              <span data-i18n="yieldDefectDensity">缺陷密度（defects/cm²）</span>
               <input type="number" id="yieldDefectDensity" min="0" step="0.001" value="0.08" />
             </label>
             <label>
-              集群因子 k（越大越乐观）
+              <span data-i18n="yieldK">集群因子 k（越高越乐观）</span>
               <input type="number" id="clusteringK" min="0.1" step="0.1" value="1.2" />
             </label>
             <label>
-              月晶圆片数（片）
+              <span data-i18n="yieldWaferPerMonth">月晶圆片数（片）</span>
               <input type="number" id="yieldWaferPerMonth" min="1" step="1" value="1200" />
             </label>
             <label>
-              目标良率（%）
+              <span data-i18n="yieldTarget">目标良率（%）</span>
               <input type="number" id="targetYield" min="1" max="100" step="0.1" value="90" />
             </label>
-            <button type="submit">开始分析</button>
+            <button type="submit" class="primary-btn" data-i18n="btnRunYield">开始分析</button>
           </form>
-          <div class="result" id="yieldResult">待计算，输入参数后点击按钮。</div>
+          <div class="result" id="yieldResult" data-i18n="yieldInitial">
+            待计算，输入参数后点击按钮。
+          </div>
         </article>
       </section>
     </main>
 
     <footer>
-      <p>InsightsLake · Semiconductor Process Intelligence</p>
+      <p data-i18n="footer">InsightsLake · Semiconductor Process Intelligence</p>
     </footer>
 
     <script src="app.js"></script>
