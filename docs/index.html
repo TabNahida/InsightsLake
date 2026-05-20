@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>InsightsLake | Semiconductor Process Analytics</title>
+    <meta
+      name="description"
+      content="InsightsLake semiconductor process density, library ranking, density calculator, and yield analyzer."
+    />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+  </head>
+  <body>
+    <div class="shell-grid" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <a class="brand" href="#overview" aria-label="InsightsLake">
+        <span class="brand-mark">IL</span>
+        <span>
+          <strong>InsightsLake</strong>
+          <small>Process Intelligence</small>
+        </span>
+      </a>
+      <nav class="nav-links" aria-label="主导航">
+        <a href="#ranking">排行</a>
+        <a href="#density">密度计算</a>
+        <a href="#yield">良率分析</a>
+        <a href="#reports">报告</a>
+      </nav>
+    </header>
+
+    <main>
+      <section id="overview" class="overview-band">
+        <div class="overview-layout">
+          <div class="overview-copy">
+            <p class="eyebrow">PUBLIC FOUNDRY DATASET</p>
+            <h1>工艺密度与库选型分析台</h1>
+            <p class="lead">
+              面向公开工艺数据的静态分析网站，聚合逻辑密度、SRAM bitcell、CPP/CGP、cell height 与资料置信度。
+            </p>
+            <div class="report-actions">
+              <a class="command primary" href="#ranking">查看排行</a>
+              <a class="command" href="assets/data/foundry_process_density_public_v0_3.xlsx">下载 XLSX</a>
+              <a class="command" href="assets/data/foundry_cgp_ch_density_sram_public_v0_3.csv">下载 CSV</a>
+            </div>
+          </div>
+
+          <div class="telemetry">
+            <div class="kpi-strip" aria-label="数据概览">
+              <article>
+                <span id="kpiRecords">--</span>
+                <small>记录</small>
+              </article>
+              <article>
+                <span id="kpiFoundries">--</span>
+                <small>厂商</small>
+              </article>
+              <article>
+                <span id="kpiBestLogic">--</span>
+                <small>最高逻辑 MTr/mm2</small>
+              </article>
+              <article>
+                <span id="kpiBestSram">--</span>
+                <small>最高 SRAM Mb/mm2</small>
+              </article>
+            </div>
+            <div class="wafer-stage">
+              <canvas id="waferCanvas" width="840" height="520" aria-label="工艺节点密度可视化"></canvas>
+              <div class="wafer-readout">
+                <span id="waferNode">Loading</span>
+                <strong id="waferDensity">--</strong>
+                <small>MTr/mm2</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="insight-band" aria-label="厂商概览">
+        <div class="section-head compact">
+          <p class="eyebrow">FOUNDRY SNAPSHOT</p>
+          <h2>公开样本覆盖</h2>
+        </div>
+        <div id="foundryGrid" class="foundry-grid"></div>
+      </section>
+
+      <section id="ranking" class="workbench-band">
+        <div class="section-head">
+          <p class="eyebrow">PROCESS AND LIBRARY RANKING</p>
+          <h2>工艺和库排行</h2>
+        </div>
+
+        <div class="control-rail">
+          <label>
+            <span>指标</span>
+            <select id="metricSelect">
+              <option value="logic">逻辑密度 MTr/mm2</option>
+              <option value="logicCalc">计算逻辑密度 MTr/mm2</option>
+              <option value="sram">SRAM 理想密度 Mb/mm2</option>
+              <option value="cpp">CPP/CGP nm</option>
+              <option value="height">Cell height nm</option>
+            </select>
+          </label>
+          <label>
+            <span>厂商</span>
+            <select id="foundryFilter"></select>
+          </label>
+          <label>
+            <span>库类型</span>
+            <select id="libraryFilter"></select>
+          </label>
+          <label>
+            <span>Top N</span>
+            <input id="topLimit" type="number" min="5" max="30" value="12" />
+          </label>
+        </div>
+
+        <div class="ranking-layout">
+          <div class="rank-panel">
+            <div class="panel-head">
+              <h3 id="rankingTitle">逻辑密度排行</h3>
+              <span id="rankingCount">--</span>
+            </div>
+            <div id="rankingList" class="ranking-list"></div>
+          </div>
+          <div class="table-panel">
+            <div class="panel-head">
+              <h3>样本明细</h3>
+              <span id="tableCount">--</span>
+            </div>
+            <div class="data-table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Foundry</th>
+                    <th>Node</th>
+                    <th>Library</th>
+                    <th>CPP</th>
+                    <th>Height</th>
+                    <th>Logic</th>
+                    <th>SRAM</th>
+                    <th>Confidence</th>
+                  </tr>
+                </thead>
+                <tbody id="dataTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="density" class="tool-band">
+        <div class="section-head">
+          <p class="eyebrow">DENSITY CALCULATOR</p>
+          <h2>密度计算器</h2>
+        </div>
+
+        <div class="tool-grid">
+          <form id="densityForm" class="tool-panel">
+            <label class="wide">
+              <span>参考样本</span>
+              <select id="presetSelect"></select>
+            </label>
+            <label>
+              <span>CPP/CGP nm</span>
+              <input id="cppInput" type="number" min="1" step="0.1" value="51" />
+            </label>
+            <label>
+              <span>Cell height nm</span>
+              <input id="heightInput" type="number" min="1" step="0.1" value="210" />
+            </label>
+            <label>
+              <span>Diffusion break</span>
+              <select id="breakModel">
+                <option value="sdb">SDB / CPODE</option>
+                <option value="ddb">DDB</option>
+              </select>
+            </label>
+            <label>
+              <span>库缩放系数</span>
+              <input id="libraryScale" type="number" min="0.2" max="2" step="0.01" value="1" />
+            </label>
+            <label>
+              <span>SRAM bitcell um2</span>
+              <input id="sramCellInput" type="number" min="0.001" step="0.001" value="0.021" />
+            </label>
+            <label>
+              <span>目标逻辑密度</span>
+              <input id="targetDensity" type="number" min="1" step="1" value="140" />
+            </label>
+          </form>
+
+          <div class="result-panel density-results">
+            <article>
+              <small>估算逻辑密度</small>
+              <strong id="calcLogicDensity">--</strong>
+              <span>MTr/mm2</span>
+            </article>
+            <article>
+              <small>SRAM 理想密度</small>
+              <strong id="calcSramDensity">--</strong>
+              <span>Mb/mm2</span>
+            </article>
+            <article>
+              <small>目标差距</small>
+              <strong id="calcGap">--</strong>
+              <span>vs target</span>
+            </article>
+            <div class="formula-box">
+              <span id="formulaLabel">SDB_FACTOR / (CPP x Height)</span>
+              <div class="scale-track">
+                <span id="densityNeedle"></span>
+              </div>
+            </div>
+            <div id="nearestMatch" class="nearest-match"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="yield" class="tool-band alt">
+        <div class="section-head">
+          <p class="eyebrow">YIELD ANALYZER</p>
+          <h2>良率分析器</h2>
+        </div>
+
+        <div class="tool-grid yield-grid">
+          <form id="yieldForm" class="tool-panel">
+            <label>
+              <span>Die area mm2</span>
+              <input id="dieArea" type="number" min="1" step="1" value="100" />
+            </label>
+            <label>
+              <span>Defect density /cm2</span>
+              <input id="defectDensity" type="number" min="0" step="0.01" value="0.2" />
+            </label>
+            <label>
+              <span>Yield model</span>
+              <select id="yieldModel">
+                <option value="poisson">Poisson</option>
+                <option value="murphy">Murphy</option>
+                <option value="negative">Negative binomial</option>
+              </select>
+            </label>
+            <label>
+              <span>聚集参数 alpha</span>
+              <input id="clusterAlpha" type="number" min="0.1" step="0.1" value="3" />
+            </label>
+            <label>
+              <span>Wafer diameter mm</span>
+              <select id="waferDiameter">
+                <option value="300">300</option>
+                <option value="200">200</option>
+              </select>
+            </label>
+            <label>
+              <span>月投片</span>
+              <input id="wafersPerMonth" type="number" min="0" step="100" value="10000" />
+            </label>
+          </form>
+
+          <div class="result-panel yield-results">
+            <article>
+              <small>Die yield</small>
+              <strong id="yieldPercent">--</strong>
+              <span>%</span>
+            </article>
+            <article>
+              <small>Gross die / wafer</small>
+              <strong id="grossDie">--</strong>
+              <span>die</span>
+            </article>
+            <article>
+              <small>Good die / wafer</small>
+              <strong id="goodDie">--</strong>
+              <span>die</span>
+            </article>
+            <article>
+              <small>Good die / month</small>
+              <strong id="monthlyGoodDie">--</strong>
+              <span>die</span>
+            </article>
+            <div class="yield-chart-wrap">
+              <canvas id="yieldCanvas" width="820" height="280" aria-label="不同 die 面积良率曲线"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="reports" class="reports-band">
+        <div class="section-head">
+          <p class="eyebrow">SOURCE REPORTS</p>
+          <h2>分析报告</h2>
+        </div>
+        <div class="report-grid">
+          <a class="report-card" href="assets/data/foundry_process_density_public_v0_3.xlsx">
+            <span>XLSX</span>
+            <strong>Foundry Process Density Public v0.3</strong>
+            <small>含厂商分表、Compare、Source Index 与 Dashboard</small>
+          </a>
+          <a class="report-card" href="assets/data/foundry_cgp_ch_density_sram_public_v0_3.csv">
+            <span>CSV</span>
+            <strong>CGP / CH / Density / SRAM Dataset</strong>
+            <small>站点交互数据源，适合二次分析与脚本读取</small>
+          </a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>InsightsLake</span>
+      <span>公开资料口径，计算结果用于工艺对比与方案预估。</span>
+    </footer>
+
+    <script src="assets/js/process-data.js"></script>
+    <script src="assets/js/app.js" defer></script>
+  </body>
+</html>
