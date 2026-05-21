@@ -44,8 +44,12 @@
         <div class="tool-grid yield-grid">
           <form id="yieldForm" class="tool-panel">
             <label>
-              <span>Die area mm2</span>
-              <input id="dieArea" type="number" min="1" step="1" value="100" />
+              <span data-i18n="yield.dieWidth">Die width mm</span>
+              <input id="dieWidth" type="number" min="1" step="0.1" value="10" />
+            </label>
+            <label>
+              <span data-i18n="yield.dieHeight">Die height mm</span>
+              <input id="dieHeight" type="number" min="1" step="0.1" value="10" />
             </label>
             <label>
               <span>Defect density /cm2</span>

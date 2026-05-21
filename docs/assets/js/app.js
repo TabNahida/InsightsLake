@@ -37,23 +37,21 @@ const I18N = {
       "Default ranking shows every row with available density data and automatically skips missing density values.",
     "ranking.metric": "Metric",
     "ranking.foundry": "Foundry",
-    "ranking.library": "Library class",
+    "ranking.process": "Process family",
+    "ranking.library": "Library bucket",
+    "ranking.confidence": "Confidence",
     "ranking.rows": "Rows",
     "ranking.allRows": "All rows",
     "ranking.allFoundries": "All foundries",
-    "ranking.allLibraries": "All library classes",
+    "ranking.allProcesses": "All process families",
+    "ranking.allLibraries": "All library buckets",
+    "ranking.allConfidence": "All confidence levels",
     "ranking.tableTitle": "Dataset rows",
     "ranking.count": "{shown} shown / {total} available",
     "metric.logic": "Logic density MTr/mm2",
-    "metric.logicCalc": "Calculated logic density MTr/mm2",
     "metric.sram": "Ideal SRAM density Mb/mm2",
-    "metric.cpp": "CPP/CGP nm",
-    "metric.height": "Cell height nm",
     "metricTitle.logic": "Logic density ranking",
-    "metricTitle.logicCalc": "Calculated logic density ranking",
     "metricTitle.sram": "Ideal SRAM density ranking",
-    "metricTitle.cpp": "Compact CPP/CGP ranking",
-    "metricTitle.height": "Compact cell-height ranking",
     "density.eyebrow": "DENSITY CALCULATOR",
     "density.title": "Estimate logic and SRAM density",
     "density.lead":
@@ -73,6 +71,8 @@ const I18N = {
     "yield.title": "Model die yield and wafer output",
     "yield.lead":
       "Compare common yield models and inspect a wafer cut map that shows gross dies, good dies, and defect losses.",
+    "yield.dieWidth": "Die width mm",
+    "yield.dieHeight": "Die height mm",
     "yield.alpha": "Clustering alpha",
     "yield.wafersPerMonth": "Wafers per month",
     "yield.chartTitle": "Yield by die area",
@@ -81,7 +81,7 @@ const I18N = {
     "yield.goodLegend": "good die",
     "yield.badLegend": "defect loss",
     "yield.edgeLegend": "wafer edge",
-    "yield.mapStats": "visual dies {gross} | good {good} | lost {bad}",
+    "yield.mapStats": "die {width} x {height} mm | area {area} mm2 | gross {gross} | good {good} | lost {bad}",
     "reports.eyebrow": "SOURCE REPORTS",
     "reports.title": "Reports and data exports",
     "reports.lead": "Download the workbook and normalized CSV used by the interactive pages.",
@@ -120,23 +120,21 @@ const I18N = {
     "ranking.lead": "默认展示所有有密度数据的行，并自动忽略缺失密度的样本。",
     "ranking.metric": "指标",
     "ranking.foundry": "厂商",
-    "ranking.library": "库类型",
+    "ranking.process": "工艺族",
+    "ranking.library": "库类型归类",
+    "ranking.confidence": "置信度",
     "ranking.rows": "行数",
     "ranking.allRows": "全部显示",
     "ranking.allFoundries": "全部厂商",
-    "ranking.allLibraries": "全部库类型",
+    "ranking.allProcesses": "全部工艺族",
+    "ranking.allLibraries": "全部库类型归类",
+    "ranking.allConfidence": "全部置信度",
     "ranking.tableTitle": "样本明细",
     "ranking.count": "显示 {shown} / 可用 {total}",
     "metric.logic": "逻辑密度 MTr/mm2",
-    "metric.logicCalc": "计算逻辑密度 MTr/mm2",
     "metric.sram": "SRAM 理想密度 Mb/mm2",
-    "metric.cpp": "CPP/CGP nm",
-    "metric.height": "Cell height nm",
     "metricTitle.logic": "逻辑密度排行",
-    "metricTitle.logicCalc": "计算逻辑密度排行",
     "metricTitle.sram": "SRAM 理想密度排行",
-    "metricTitle.cpp": "CPP/CGP 紧凑排行",
-    "metricTitle.height": "Cell height 紧凑排行",
     "density.eyebrow": "DENSITY CALCULATOR",
     "density.title": "估算逻辑与 SRAM 密度",
     "density.lead": "从公开样本开始，或直接输入 CPP/CGP 与 cell height，将估算密度与目标值对比。",
@@ -154,6 +152,8 @@ const I18N = {
     "yield.eyebrow": "YIELD ANALYZER",
     "yield.title": "良率与晶圆产出建模",
     "yield.lead": "对比常见良率模型，并通过晶圆切割示意图查看 gross die、good die 与 defect loss。",
+    "yield.dieWidth": "芯片宽度 mm",
+    "yield.dieHeight": "芯片高度 mm",
     "yield.alpha": "聚集参数 alpha",
     "yield.wafersPerMonth": "月投片",
     "yield.chartTitle": "不同 die 面积良率",
@@ -162,7 +162,7 @@ const I18N = {
     "yield.goodLegend": "良品 die",
     "yield.badLegend": "缺陷损失",
     "yield.edgeLegend": "晶圆边界",
-    "yield.mapStats": "示意 die {gross} | 良品 {good} | 损失 {bad}",
+    "yield.mapStats": "die {width} x {height} mm | 面积 {area} mm2 | gross {gross} | 良品 {good} | 损失 {bad}",
     "reports.eyebrow": "SOURCE REPORTS",
     "reports.title": "报告与数据导出",
     "reports.lead": "下载交互页面使用的 workbook 和规范化 CSV。",
@@ -197,7 +197,9 @@ function cacheElements() {
     "foundryGrid",
     "metricSelect",
     "foundryFilter",
+    "processFilter",
     "libraryFilter",
+    "confidenceFilter",
     "rowLimit",
     "rankingTitle",
     "rankingCount",
@@ -217,7 +219,9 @@ function cacheElements() {
     "formulaLabel",
     "densityNeedle",
     "nearestMatch",
-    "dieArea",
+    "yieldForm",
+    "dieWidth",
+    "dieHeight",
     "defectDensity",
     "yieldModel",
     "clusterAlpha",
@@ -319,7 +323,7 @@ function showDataLoadError() {
 function initPageControls() {
   if (els.metricSelect) {
     refreshRankingControls();
-    ["metricSelect", "foundryFilter", "libraryFilter", "rowLimit"].forEach((id) => {
+    ["metricSelect", "foundryFilter", "processFilter", "libraryFilter", "confidenceFilter", "rowLimit"].forEach((id) => {
       els[id]?.addEventListener("input", renderRankingArea);
     });
   }
@@ -346,7 +350,7 @@ function initPageControls() {
   }
 
   if (els.yieldForm) {
-    ["dieArea", "defectDensity", "yieldModel", "clusterAlpha", "waferDiameter", "wafersPerMonth"].forEach((id) => {
+    ["dieWidth", "dieHeight", "defectDensity", "yieldModel", "clusterAlpha", "waferDiameter", "wafersPerMonth"].forEach((id) => {
       els[id]?.addEventListener("input", renderYieldAnalyzer);
     });
   }
@@ -371,13 +375,15 @@ function renderCurrentPage() {
 function refreshRankingControls() {
   const metricValue = els.metricSelect?.value || "logic";
   const foundryValue = els.foundryFilter?.value || ALL_VALUE;
+  const processValue = els.processFilter?.value || ALL_VALUE;
   const libraryValue = els.libraryFilter?.value || ALL_VALUE;
+  const confidenceValue = els.confidenceFilter?.value || ALL_VALUE;
 
   if (els.metricSelect) {
-    els.metricSelect.innerHTML = ["logic", "logicCalc", "sram", "cpp", "height"]
+    els.metricSelect.innerHTML = ["logic", "sram"]
       .map((value) => `<option value="${value}">${escapeHtml(t(`metric.${value}`))}</option>`)
       .join("");
-    els.metricSelect.value = metricValue;
+    els.metricSelect.value = optionExists(els.metricSelect, metricValue) ? metricValue : "logic";
   }
 
   if (els.foundryFilter) {
@@ -388,12 +394,28 @@ function refreshRankingControls() {
     els.foundryFilter.value = optionExists(els.foundryFilter, foundryValue) ? foundryValue : ALL_VALUE;
   }
 
+  if (els.processFilter) {
+    fillSelect(els.processFilter, [
+      { value: ALL_VALUE, label: t("ranking.allProcesses") },
+      ...unique(state.records.map((row) => processBucket(row))).map((value) => ({ value, label: value })),
+    ]);
+    els.processFilter.value = optionExists(els.processFilter, processValue) ? processValue : ALL_VALUE;
+  }
+
   if (els.libraryFilter) {
     fillSelect(els.libraryFilter, [
       { value: ALL_VALUE, label: t("ranking.allLibraries") },
-      ...unique(state.records.map((row) => simplifyLibrary(row.libraryClass))).map((value) => ({ value, label: value })),
+      ...unique(state.records.map((row) => libraryBucket(row))).map((value) => ({ value, label: value })),
     ]);
     els.libraryFilter.value = optionExists(els.libraryFilter, libraryValue) ? libraryValue : ALL_VALUE;
+  }
+
+  if (els.confidenceFilter) {
+    fillSelect(els.confidenceFilter, [
+      { value: ALL_VALUE, label: t("ranking.allConfidence") },
+      ...unique(state.records.map((row) => confidenceBucket(row.confidence))).map((value) => ({ value, label: value })),
+    ]);
+    els.confidenceFilter.value = optionExists(els.confidenceFilter, confidenceValue) ? confidenceValue : ALL_VALUE;
   }
 }
 
@@ -464,13 +486,17 @@ function renderRankingArea() {
   }
   const metric = els.metricSelect.value || "logic";
   const foundryFilter = els.foundryFilter.value || ALL_VALUE;
+  const processFilter = els.processFilter.value || ALL_VALUE;
   const libraryFilter = els.libraryFilter.value || ALL_VALUE;
+  const confidenceFilter = els.confidenceFilter.value || ALL_VALUE;
   const rowLimit = els.rowLimit.value || "all";
   const config = metricConfig(metric);
 
   const filtered = state.records
     .filter((row) => foundryFilter === ALL_VALUE || row.foundry === foundryFilter)
-    .filter((row) => libraryFilter === ALL_VALUE || simplifyLibrary(row.libraryClass) === libraryFilter)
+    .filter((row) => processFilter === ALL_VALUE || processBucket(row) === processFilter)
+    .filter((row) => libraryFilter === ALL_VALUE || libraryBucket(row) === libraryFilter)
+    .filter((row) => confidenceFilter === ALL_VALUE || confidenceBucket(row.confidence) === confidenceFilter)
     .filter((row) => Number.isFinite(config.value(row)));
 
   const ranked = filtered.sort((a, b) => {
@@ -507,7 +533,7 @@ function renderRankingList(rows, config) {
           <div class="rank-index">#${index + 1}</div>
           <div class="rank-main">
             <strong title="${escapeHtml(row.variant)}">${escapeHtml(row.variant)}</strong>
-            <span>${escapeHtml(displayFoundry(row.foundry))} | ${escapeHtml(row.libraryClass)} | ${escapeHtml(row.confidence)}</span>
+            <span>${escapeHtml(displayFoundry(row.foundry))} | ${escapeHtml(processBucket(row))} | ${escapeHtml(libraryBucket(row))} | ${escapeHtml(confidenceBucket(row.confidence))}</span>
           </div>
           <div class="rank-value">
             <strong>${formatNumber(value, config.decimals)}</strong>
@@ -612,15 +638,18 @@ function renderYieldAnalyzer() {
   if (!els.yieldPercent) {
     return;
   }
-  const dieArea = Math.max(1, toNumber(els.dieArea.value) || 1);
+  const dieWidth = Math.max(1, toNumber(els.dieWidth.value) || 1);
+  const dieHeight = Math.max(1, toNumber(els.dieHeight.value) || 1);
+  const dieArea = dieWidth * dieHeight;
   const defectDensity = Math.max(0, toNumber(els.defectDensity.value) || 0);
   const alpha = Math.max(0.1, toNumber(els.clusterAlpha.value) || 3);
   const waferDiameter = toNumber(els.waferDiameter.value) || 300;
   const wafersPerMonth = Math.max(0, toNumber(els.wafersPerMonth.value) || 0);
   const model = els.yieldModel.value;
   const dieYield = calculateYield(dieArea, defectDensity, model, alpha);
-  const gross = grossDiesPerWafer(dieArea, waferDiameter);
-  const good = gross * dieYield;
+  const waferDies = generateWaferDies({ dieWidth, dieHeight, waferDiameter });
+  const gross = waferDies.length;
+  const good = Math.round(gross * dieYield);
 
   els.yieldPercent.textContent = formatNumber(dieYield * 100, 1);
   els.grossDie.textContent = formatNumber(gross, 0);
@@ -628,7 +657,7 @@ function renderYieldAnalyzer() {
   els.monthlyGoodDie.textContent = formatNumber(good * wafersPerMonth, 0);
 
   drawYieldChart({ dieArea, defectDensity, model, alpha });
-  drawWaferCutMap({ dieArea, dieYield, waferDiameter });
+  drawWaferCutMap({ dieWidth, dieHeight, dieArea, waferDiameter, waferDies, good });
 }
 
 function calculateYield(dieAreaMm2, defectDensity, model, alpha) {
@@ -644,13 +673,6 @@ function calculateYield(dieAreaMm2, defectDensity, model, alpha) {
     return Math.pow(1 + ad / alpha, -alpha);
   }
   return Math.exp(-ad);
-}
-
-function grossDiesPerWafer(dieAreaMm2, waferDiameterMm) {
-  const radius = waferDiameterMm / 2;
-  const waferArea = Math.PI * radius * radius;
-  const edgeLoss = Math.PI * waferDiameterMm / Math.sqrt(2 * dieAreaMm2);
-  return Math.max(0, Math.floor(waferArea / dieAreaMm2 - edgeLoss));
 }
 
 function drawYieldChart({ dieArea, defectDensity, model, alpha }) {
@@ -729,7 +751,36 @@ function drawYieldChart({ dieArea, defectDensity, model, alpha }) {
   ctx.textAlign = "left";
 }
 
-function drawWaferCutMap({ dieArea, dieYield, waferDiameter }) {
+function generateWaferDies({ dieWidth, dieHeight, waferDiameter }) {
+  const radius = waferDiameter / 2;
+  const columns = Math.ceil(waferDiameter / dieWidth) + 2;
+  const rows = Math.ceil(waferDiameter / dieHeight) + 2;
+  const dies = [];
+
+  for (let row = -rows; row <= rows; row += 1) {
+    for (let col = -columns; col <= columns; col += 1) {
+      const centerX = col * dieWidth;
+      const centerY = row * dieHeight;
+      const x = centerX - dieWidth / 2;
+      const y = centerY - dieHeight / 2;
+      if (isFullDieInsideWaferMm(x, y, dieWidth, dieHeight, radius)) {
+        dies.push({
+          x,
+          y,
+          width: dieWidth,
+          height: dieHeight,
+          row,
+          col,
+          noise: deterministicNoise(row, col, Math.round(dieWidth * 37 + dieHeight * 71 + waferDiameter)),
+        });
+      }
+    }
+  }
+
+  return dies;
+}
+
+function drawWaferCutMap({ dieWidth, dieHeight, dieArea, waferDiameter, waferDies, good }) {
   const canvas = els.waferCutCanvas;
   if (!canvas) {
     return;
@@ -740,10 +791,15 @@ function drawWaferCutMap({ dieArea, dieYield, waferDiameter }) {
   const cx = width * 0.5;
   const cy = height * 0.54;
   const radius = Math.min(width, height) * 0.39;
-  const dieSideMm = Math.sqrt(dieArea);
-  const diePx = clamp((dieSideMm / waferDiameter) * radius * 2, 5, 48);
-  const half = diePx / 2;
-  const cells = [];
+  const scale = radius / (waferDiameter / 2);
+  const visualDies = waferDies.length > 2500 ? waferDies.filter((_, index) => index % Math.ceil(waferDies.length / 2500) === 0) : waferDies;
+  const badCount = Math.max(0, waferDies.length - good);
+  const badSet = new Set(
+    [...waferDies]
+      .sort((a, b) => b.noise - a.noise)
+      .slice(0, badCount)
+      .map((cell) => `${cell.row}:${cell.col}`),
+  );
 
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = "#070a09";
@@ -754,24 +810,17 @@ function drawWaferCutMap({ dieArea, dieYield, waferDiameter }) {
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
   ctx.clip();
 
-  const count = Math.ceil((radius * 2) / diePx);
-  for (let row = -count; row <= count; row += 1) {
-    for (let col = -count; col <= count; col += 1) {
-      const x = cx + col * diePx;
-      const y = cy + row * diePx;
-      if (isFullDieInsideWafer(x, y, half, cx, cy, radius)) {
-        const bad = deterministicNoise(row, col, Math.round(dieArea)) > dieYield;
-        cells.push({ x: x - half, y: y - half, bad, row, col });
-      }
-    }
-  }
-
-  cells.forEach((cell) => {
-    ctx.fillStyle = cell.bad ? "rgba(255, 117, 104, 0.72)" : "rgba(70, 239, 180, 0.55)";
-    ctx.fillRect(cell.x + 0.7, cell.y + 0.7, diePx - 1.4, diePx - 1.4);
+  visualDies.forEach((cell) => {
+    const rectX = cx + cell.x * scale;
+    const rectY = cy + cell.y * scale;
+    const rectW = Math.max(1.2, cell.width * scale);
+    const rectH = Math.max(1.2, cell.height * scale);
+    const bad = badSet.has(`${cell.row}:${cell.col}`);
+    ctx.fillStyle = bad ? "rgba(255, 117, 104, 0.72)" : "rgba(70, 239, 180, 0.55)";
+    ctx.fillRect(rectX + 0.7, rectY + 0.7, Math.max(0.8, rectW - 1.4), Math.max(0.8, rectH - 1.4));
     ctx.strokeStyle = "rgba(7, 10, 9, 0.75)";
     ctx.lineWidth = 0.7;
-    ctx.strokeRect(cell.x + 0.7, cell.y + 0.7, diePx - 1.4, diePx - 1.4);
+    ctx.strokeRect(rectX + 0.7, rectY + 0.7, Math.max(0.8, rectW - 1.4), Math.max(0.8, rectH - 1.4));
   });
 
   ctx.restore();
@@ -790,14 +839,15 @@ function drawWaferCutMap({ dieArea, dieYield, waferDiameter }) {
     ctx.stroke();
   }
 
-  const badCount = cells.filter((cell) => cell.bad).length;
-  const goodCount = cells.length - badCount;
   drawWaferMapLabel(ctx, {
     width,
     title: t("yield.waferTitle"),
     stats: t("yield.mapStats", {
-      gross: formatNumber(cells.length, 0),
-      good: formatNumber(goodCount, 0),
+      width: formatNumber(dieWidth, 1),
+      height: formatNumber(dieHeight, 1),
+      area: formatNumber(dieArea, 1),
+      gross: formatNumber(waferDies.length, 0),
+      good: formatNumber(good, 0),
       bad: formatNumber(badCount, 0),
     }),
   });
@@ -835,13 +885,13 @@ function drawLegend(ctx, width) {
   });
 }
 
-function isFullDieInsideWafer(x, y, half, cx, cy, radius) {
+function isFullDieInsideWaferMm(x, y, dieWidth, dieHeight, radius) {
   return [
-    [x - half, y - half],
-    [x + half, y - half],
-    [x - half, y + half],
-    [x + half, y + half],
-  ].every(([px, py]) => Math.hypot(px - cx, py - cy) <= radius);
+    [x, y],
+    [x + dieWidth, y],
+    [x, y + dieHeight],
+    [x + dieWidth, y + dieHeight],
+  ].every(([px, py]) => Math.hypot(px, py) <= radius);
 }
 
 function deterministicNoise(row, col, seed) {
@@ -940,33 +990,12 @@ function metricConfig(metric) {
       asc: false,
       value: (row) => row.logic,
     },
-    logicCalc: {
-      title: t("metricTitle.logicCalc"),
-      unit: "MTr/mm2",
-      decimals: 1,
-      asc: false,
-      value: (row) => row.logicCalc,
-    },
     sram: {
       title: t("metricTitle.sram"),
       unit: "Mb/mm2",
       decimals: 1,
       asc: false,
       value: (row) => row.sram,
-    },
-    cpp: {
-      title: t("metricTitle.cpp"),
-      unit: "nm",
-      decimals: 0,
-      asc: true,
-      value: (row) => row.cpp,
-    },
-    height: {
-      title: t("metricTitle.height"),
-      unit: "nm",
-      decimals: 0,
-      asc: true,
-      value: (row) => row.height,
     },
   };
   return configs[metric] || configs.logic;
@@ -1046,15 +1075,45 @@ function normalizeRecord(row) {
   };
 }
 
-function simplifyLibrary(value) {
+function processBucket(row) {
+  return row.family || row.process || t("common.unlabeled");
+}
+
+function libraryBucket(row) {
+  const source = `${row.libraryClass || ""} ${row.libraryOption || ""}`.toLowerCase();
+  const hasHd = /\bhd\b|high density|dense/.test(source);
+  const hasHp = /\bhp\b|high performance|performance/.test(source);
+
+  if (source.includes("tbd")) return "TBD";
+  if (source.includes("gaa")) return "GAA";
+  if (source.includes("automotive") || source.includes("robust")) return "Robust / automotive";
+  if (source.includes("cost")) return "Cost optimized";
+  if (source.includes("generic") || source.includes("standard")) return "Generic / standard";
+  if (source.includes("minilib") || source.includes("area")) return "Area optimized";
+  if (source.includes("uhd")) return "UHD";
+  if (source.includes("hdc")) return "HDC";
+  if (source.includes("hpc")) return "HPC";
+  if (hasHd && hasHp) return "HD/HP mixed";
+  if (hasHd) return "HD";
+  if (hasHp || source.includes("uhs") || source.includes("high-speed")) return "HP";
+  if (source.includes("balanced")) return "Balanced";
+  if (source.includes("ulp") || source.includes("ulv") || source.includes("low-power")) return "ULP/ULV";
+  if (source.includes("mature") || source.includes("planar")) return "Mature";
+  if (source.includes("specialty") || source.includes("reported")) return "Specialty / reported";
+  return row.libraryClass || t("common.unlabeled");
+}
+
+function confidenceBucket(value) {
   const text = String(value || "").toLowerCase();
-  if (text.includes("uhd")) return "UHD";
-  if (text.includes("hdc")) return "HDC";
-  if (text.includes("hd")) return "HD";
-  if (text.includes("hp")) return "HP";
-  if (text.includes("balanced")) return "Balanced";
-  if (text.includes("ulp") || text.includes("ulv")) return "ULP/ULV";
-  return value || t("common.unlabeled");
+  if (!text) return "Unknown";
+  if (text.includes("high") && text.includes("low")) return "Mixed / scoped";
+  if (text.includes("medium-high")) return "Medium-High";
+  if (text.includes("medium-low")) return "Medium-Low";
+  if (text.includes("low-medium")) return "Low-Medium";
+  if (text.includes("high")) return "High";
+  if (text.includes("medium")) return "Medium";
+  if (text.includes("low")) return "Low";
+  return value;
 }
 
 function isDdb(value) {
