@@ -1,6 +1,4 @@
-const DATA_URL = "assets/data/foundry_cgp_ch_density_sram_public_v0_3.csv";
-const SDB_FACTOR = 1473684.2;
-const DDB_FACTOR = 1240000;
+const DATA_URL = "assets/data/cgp_ch_density_sram_compare_v0_4.csv";
 const ALL_VALUE = "__all";
 
 const I18N = {
@@ -12,7 +10,8 @@ const I18N = {
     "nav.yield": "Yield",
     "nav.reports": "Reports",
     "common.downloadXlsx": "Download XLSX",
-    "common.downloadCsv": "Download CSV",
+    "common.downloadCsv": "Download v0.4 CSV",
+    "common.dataQualityCsv": "Data quality CSV",
     "common.records": "{count} records",
     "common.rows": "{count} rows",
     "common.unlabeled": "Unlabeled",
@@ -21,12 +20,12 @@ const I18N = {
     "home.eyebrow": "PUBLIC FOUNDRY DATASET",
     "home.title": "Process Density and Library Analytics",
     "home.lead":
-      "A static analysis console for public semiconductor process data, combining logic density, SRAM bitcell, CPP/CGP, cell height, and source confidence.",
+      "A static analysis console for the v0.4 public semiconductor process dataset, combining logic density, SRAM bitcell, CPP/CGP, cell height, and source confidence.",
     "home.viewRanking": "Open ranking",
     "home.snapshotEyebrow": "FOUNDRY SNAPSHOT",
     "home.snapshotTitle": "Public sample coverage",
     "home.viewReports": "View source reports",
-    "home.foundryCard": "{count} records | best {density} MTr/mm2",
+    "home.foundryCard": "{count} records | best {density} MTr/mm2 | review {review}",
     "kpi.records": "records",
     "kpi.foundries": "foundries",
     "kpi.bestLogic": "best logic MTr/mm2",
@@ -52,6 +51,7 @@ const I18N = {
     "metric.sram": "Ideal SRAM density Mb/mm2",
     "metricTitle.logic": "Logic density ranking",
     "metricTitle.sram": "Ideal SRAM density ranking",
+    "quality.review": "Review",
     "density.eyebrow": "DENSITY CALCULATOR",
     "density.title": "Estimate logic and SRAM density",
     "density.lead":
@@ -62,8 +62,8 @@ const I18N = {
     "density.estimatedLogic": "Estimated logic density",
     "density.idealSram": "Ideal SRAM density",
     "density.targetGap": "Target gap",
-    "density.formulaSdb": "SDB_FACTOR / (CPP x Height) x library scale",
-    "density.formulaDdb": "DDB_FACTOR / (CPP x Height) x library scale",
+    "density.formulaSdb": "Bohr NAND2/SFF mix, break extra 0 CPP x library scale",
+    "density.formulaDdb": "Bohr NAND2/SFF mix, break extra 1 CPP x library scale",
     "density.nearest": "Nearest sample: {foundry} {node}",
     "density.nearestDetail": "{density} MTr/mm2, delta {diff} MTr/mm2",
     "density.waiting": "Waiting for valid parameters",
@@ -82,9 +82,13 @@ const I18N = {
     "yield.mapStats": "die {width} x {height} mm | area {area} mm2 | gross {gross} | good {good} | lost {bad}",
     "reports.eyebrow": "SOURCE REPORTS",
     "reports.title": "Reports and data exports",
-    "reports.lead": "Download the workbook and normalized CSV used by the interactive pages.",
-    "reports.xlsxDesc": "Workbook with foundry sheets, comparison views, source index, and dashboard.",
-    "reports.csvDesc": "Normalized data source for the static site and downstream scripts.",
+    "reports.lead": "Download the v0.4 normalized CSV exports used by the interactive pages.",
+    "reports.xlsxDesc": "Legacy v0.3 workbook with foundry sheets, comparison views, source index, and dashboard.",
+    "reports.csvDesc": "Primary v0.4 CGP / cell-height / density / SRAM dataset.",
+    "reports.qualityDesc": "Data quality summary with coverage counts and records marked for review.",
+    "reports.metricsDesc": "Derived density and SRAM calculations with formula inputs and assumptions.",
+    "reports.observationsDesc": "Normalized process observations before derived metrics are attached.",
+    "reports.sourcesDesc": "Raw public source index used by the v0.4 report.",
     "footer.note": "Public-source estimates for process comparison and early planning.",
   },
   zh: {
@@ -95,7 +99,8 @@ const I18N = {
     "nav.yield": "良率分析",
     "nav.reports": "报告",
     "common.downloadXlsx": "下载 XLSX",
-    "common.downloadCsv": "下载 CSV",
+    "common.downloadCsv": "下载 v0.4 CSV",
+    "common.dataQualityCsv": "数据质量 CSV",
     "common.records": "{count} 条记录",
     "common.rows": "{count} 行",
     "common.unlabeled": "未标注",
@@ -103,12 +108,12 @@ const I18N = {
     "common.dataLoadError": "数据加载失败，请确认 CSV 资产存在。",
     "home.eyebrow": "PUBLIC FOUNDRY DATASET",
     "home.title": "工艺密度与库选型分析台",
-    "home.lead": "面向公开工艺数据的静态分析网站，聚合逻辑密度、SRAM bitcell、CPP/CGP、cell height 与资料置信度。",
+    "home.lead": "面向 v0.4 公开工艺数据的静态分析网站，聚合逻辑密度、SRAM bitcell、CPP/CGP、cell height 与资料置信度。",
     "home.viewRanking": "查看排行",
     "home.snapshotEyebrow": "FOUNDRY SNAPSHOT",
     "home.snapshotTitle": "公开样本覆盖",
     "home.viewReports": "查看来源报告",
-    "home.foundryCard": "{count} 条记录 | 最高 {density} MTr/mm2",
+    "home.foundryCard": "{count} 条记录 | 最高 {density} MTr/mm2 | 复核 {review}",
     "kpi.records": "记录",
     "kpi.foundries": "厂商",
     "kpi.bestLogic": "最高逻辑 MTr/mm2",
@@ -133,6 +138,7 @@ const I18N = {
     "metric.sram": "SRAM 理想密度 Mb/mm2",
     "metricTitle.logic": "逻辑密度排行",
     "metricTitle.sram": "SRAM 理想密度排行",
+    "quality.review": "需复核",
     "density.eyebrow": "DENSITY CALCULATOR",
     "density.title": "估算逻辑与 SRAM 密度",
     "density.lead": "从公开样本开始，或直接输入 CPP/CGP 与 cell height，将估算密度与目标值对比。",
@@ -142,8 +148,8 @@ const I18N = {
     "density.estimatedLogic": "估算逻辑密度",
     "density.idealSram": "SRAM 理想密度",
     "density.targetGap": "目标差距",
-    "density.formulaSdb": "SDB_FACTOR / (CPP x Height) x 库缩放系数",
-    "density.formulaDdb": "DDB_FACTOR / (CPP x Height) x 库缩放系数",
+    "density.formulaSdb": "Bohr NAND2/SFF 混合公式，break extra 0 CPP x 库缩放系数",
+    "density.formulaDdb": "Bohr NAND2/SFF 混合公式，break extra 1 CPP x 库缩放系数",
     "density.nearest": "接近样本：{foundry} {node}",
     "density.nearestDetail": "{density} MTr/mm2，差值 {diff} MTr/mm2",
     "density.waiting": "等待有效参数",
@@ -161,9 +167,13 @@ const I18N = {
     "yield.mapStats": "die {width} x {height} mm | 面积 {area} mm2 | gross {gross} | 良品 {good} | 损失 {bad}",
     "reports.eyebrow": "SOURCE REPORTS",
     "reports.title": "报告与数据导出",
-    "reports.lead": "下载交互页面使用的 workbook 和规范化 CSV。",
-    "reports.xlsxDesc": "包含厂商分表、对比视图、来源索引和 dashboard 的工作簿。",
-    "reports.csvDesc": "静态站与下游脚本使用的规范化数据源。",
+    "reports.lead": "下载交互页面使用的 v0.4 规范化 CSV 导出。",
+    "reports.xlsxDesc": "v0.3 旧版 workbook，包含厂商分表、对比视图、来源索引和 dashboard。",
+    "reports.csvDesc": "v0.4 主数据表：CGP / cell height / density / SRAM 对比。",
+    "reports.qualityDesc": "数据质量摘要，包含覆盖率计数与需要复核的记录。",
+    "reports.metricsDesc": "派生密度与 SRAM 计算，包含公式输入和假设说明。",
+    "reports.observationsDesc": "挂接派生指标前的规范化工艺观察记录。",
+    "reports.sourcesDesc": "v0.4 报告使用的公开来源索引。",
     "footer.note": "公开资料口径，计算结果用于工艺对比与早期方案预估。",
   },
 };
@@ -464,11 +474,18 @@ function renderFoundryGrid() {
     .map(([foundry, rows]) => {
       const best = maxBy(rows, (row) => row.logic);
       const bestValue = best?.logic || 0;
+      const reviewCount = rows.filter((row) => row.reviewRequired).length;
       const width = clamp((bestValue / bestOverall) * 100, 4, 100);
       return `
         <article class="foundry-card">
           <strong>${escapeHtml(foundry)}</strong>
-          <small>${escapeHtml(t("home.foundryCard", { count: rows.length, density: formatNumber(bestValue, 1) }))}</small>
+          <small>${escapeHtml(
+            t("home.foundryCard", {
+              count: rows.length,
+              density: formatNumber(bestValue, 1),
+              review: reviewCount,
+            }),
+          )}</small>
           <div class="mini-meter"><span style="width:${width}%"></span></div>
         </article>
       `;
@@ -524,12 +541,19 @@ function renderRankingList(rows, config) {
       const value = config.value(row);
       const span = max === min ? 100 : config.asc ? ((max - value) / (max - min)) * 100 : ((value - min) / (max - min)) * 100;
       const width = clamp(span, 6, 100);
+      const meta = [
+        displayFoundry(row.foundry),
+        processBucket(row),
+        libraryBucket(row),
+        confidenceBucket(row.confidence),
+        row.reviewRequired ? t("quality.review") : "",
+      ].filter(Boolean);
       return `
         <article class="rank-row">
           <div class="rank-index">#${index + 1}</div>
           <div class="rank-main">
             <strong title="${escapeHtml(row.variant)}">${escapeHtml(row.variant)}</strong>
-            <span>${escapeHtml(displayFoundry(row.foundry))} | ${escapeHtml(processBucket(row))} | ${escapeHtml(libraryBucket(row))} | ${escapeHtml(confidenceBucket(row.confidence))}</span>
+            <span>${escapeHtml(meta.join(" | "))}</span>
           </div>
           <div class="rank-value">
             <strong>${formatNumber(value, config.decimals)}</strong>
@@ -555,14 +579,16 @@ function renderDataTable(rows) {
     .map(
       (row) => `
         <tr>
-          <td>${escapeHtml(displayFoundry(row.foundry))}</td>
-          <td>${escapeHtml(row.variant)}</td>
-          <td>${escapeHtml(row.libraryClass)}</td>
-          <td class="numeric">${formatMaybe(row.cpp, 0)}</td>
-          <td class="numeric">${formatMaybe(row.height, 0)}</td>
-          <td class="numeric">${formatMaybe(row.logic, 1)}</td>
-          <td class="numeric">${formatMaybe(row.sram, 1)}</td>
-          <td><span class="confidence">${escapeHtml(row.confidence)}</span></td>
+          <td data-label="Foundry">${escapeHtml(displayFoundry(row.foundry))}</td>
+          <td data-label="Node">${escapeHtml(row.variant)}</td>
+          <td data-label="Library">${escapeHtml(row.libraryClass)}</td>
+          <td data-label="CPP" class="numeric">${formatMaybe(row.cpp, 0)}</td>
+          <td data-label="Height" class="numeric">${formatMaybe(row.height, 0)}</td>
+          <td data-label="Logic" class="numeric">${formatMaybe(row.logic, 1)}</td>
+          <td data-label="SRAM" class="numeric">${formatMaybe(row.sram, 1)}</td>
+          <td data-label="Confidence"><span class="confidence${row.reviewRequired ? " review" : ""}">${escapeHtml(
+            row.reviewRequired ? `${row.confidence} / ${t("quality.review")}` : row.confidence,
+          )}</span></td>
         </tr>
       `,
     )
@@ -576,7 +602,7 @@ function applyDensityPreset() {
   }
   els.cppInput.value = preset.cpp || els.cppInput.value;
   els.heightInput.value = preset.height || els.heightInput.value;
-  els.breakModel.value = isDdb(preset.breakModel) ? "ddb" : "sdb";
+  els.breakModel.value = (Number.isFinite(preset.breakExtra) && preset.breakExtra > 0) || isDdb(preset.breakModel) ? "ddb" : "sdb";
   if (Number.isFinite(preset.sramCell)) {
     els.sramCellInput.value = preset.sramCell;
   }
@@ -597,8 +623,8 @@ function renderDensityCalculator() {
   const scale = toNumber(els.libraryScale.value) || 1;
   const target = toNumber(els.targetDensity.value);
   const sramCell = toNumber(els.sramCellInput.value);
-  const factor = els.breakModel.value === "ddb" ? DDB_FACTOR : SDB_FACTOR;
-  const logicDensity = cpp > 0 && height > 0 ? (factor / (cpp * height)) * scale : NaN;
+  const breakExtra = els.breakModel.value === "ddb" ? 1 : 0;
+  const logicDensity = cpp > 0 && height > 0 ? calculateLogicDensity(cpp, height, breakExtra, scale) : NaN;
   const sramDensity = sramCell > 0 ? 1 / sramCell : NaN;
   const gap = Number.isFinite(target) && target > 0 ? ((logicDensity - target) / target) * 100 : NaN;
 
@@ -628,6 +654,12 @@ function renderDensityCalculator() {
   } else {
     els.nearestMatch.innerHTML = `<span>${escapeHtml(t("density.waiting"))}</span>`;
   }
+}
+
+function calculateLogicDensity(cpp, height, breakExtra = 0, scale = 1) {
+  const nand2 = 0.6 * (4 / ((3 + breakExtra) * cpp * height));
+  const sff = 0.4 * (32 / ((19 + breakExtra) * cpp * height));
+  return (nand2 + sff) * 1_000_000 * scale;
 }
 
 function renderYieldAnalyzer() {
@@ -771,27 +803,44 @@ function drawWaferCutMap({ dieWidth, dieHeight, dieArea, waferDiameter, waferDie
       bad: formatNumber(badCount, 0),
     }),
   });
-  drawLegend(ctx, width);
+  drawLegend(ctx, width, height);
 }
 
 function drawWaferMapLabel(ctx, { width, title, stats }) {
+  const inset = width < 520 ? 14 : 24;
   ctx.fillStyle = "#c5d6cd";
   ctx.font = "700 13px Segoe UI";
   ctx.textAlign = "left";
-  ctx.fillText(title, 24, 26);
+  ctx.fillText(title, inset, 26);
   ctx.fillStyle = "#95a8a0";
   ctx.font = "12px Segoe UI";
-  ctx.fillText(stats, 24, 47);
-  ctx.textAlign = "right";
-  ctx.fillText("notch", width - 24, 47);
+  drawWrappedText(ctx, stats, inset, 47, width - inset * 2, 15, width < 520 ? 2 : 1);
+  if (width >= 520) {
+    ctx.textAlign = "right";
+    ctx.fillText("notch", width - inset, 47);
+  }
 }
 
-function drawLegend(ctx, width) {
+function drawLegend(ctx, width, height) {
   const items = [
     ["#46efb4", t("yield.goodLegend")],
     ["#ff7568", t("yield.badLegend")],
     ["#ffbd54", t("yield.edgeLegend")],
   ];
+  if (width < 520) {
+    const x = 14;
+    let y = height - 56;
+    ctx.textAlign = "left";
+    items.forEach(([color, label]) => {
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, 10, 10);
+      ctx.fillStyle = "#c5d6cd";
+      ctx.font = "12px Segoe UI";
+      ctx.fillText(label, x + 15, y + 10);
+      y += 17;
+    });
+    return;
+  }
   let x = width - 318;
   const y = 24;
   ctx.textAlign = "left";
@@ -803,6 +852,30 @@ function drawLegend(ctx, width) {
     ctx.fillText(label, x + 15, y + 10);
     x += Math.max(84, label.length * 8 + 28);
   });
+}
+
+function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
+  const words = String(text).split(/\s+/);
+  let line = "";
+  let lines = 0;
+  ctx.textAlign = "left";
+
+  words.forEach((word) => {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      if (lines < maxLines) {
+        ctx.fillText(line, x, y + lines * lineHeight);
+      }
+      line = word;
+      lines += 1;
+    } else {
+      line = test;
+    }
+  });
+
+  if (line && lines < maxLines) {
+    ctx.fillText(line, x, y + lines * lineHeight);
+  }
 }
 
 function isFullDieInsideWaferMm(x, y, dieWidth, dieHeight, radius) {
@@ -970,29 +1043,72 @@ function parseCsv(csv) {
 }
 
 function normalizeRecord(row) {
-  const calc = toNumber(row.Logic_density_calc_MTr_per_mm2);
-  const reported = toNumber(row.Logic_density_reported_MTr_per_mm2);
+  const calc = firstNumber(row, "logic_density_calculated_mtr_mm2", "Logic_density_calc_MTr_per_mm2");
+  const reported = firstNumber(row, "logic_density_reported_mtr_mm2", "Logic_density_reported_MTr_per_mm2");
+  const sramIdeal = firstNumber(row, "sram_ideal_mb_mm2", "SRAM_ideal_Mb_per_mm2");
+  const sramReported = firstNumber(row, "sram_reported_mb_mm2", "SRAM_reported_Mb_mm2");
+  const confidence =
+    field(row, "Confidence") || confidenceScoreLabel(firstNumber(row, "overall_confidence", "Overall_confidence"));
   return {
-    foundry: row.Foundry || "",
-    family: row.Process_family,
-    process: row.Process_node,
-    variant: row.Variant_node || row.Process_node || "Unknown",
-    libraryOption: row.Library_option,
-    libraryClass: row.Library_class || "Unlabeled",
-    structure: row.Structure,
-    cpp: toNumber(row.CPP_CGP_nm),
-    height: toNumber(row.Cell_height_nm),
-    breakModel: row.Diffusion_break_model,
-    breakExtra: toNumber(row.Break_extra_CPP),
+    id: field(row, "record_id"),
+    foundry: field(row, "foundry", "Foundry"),
+    family: field(row, "process_family", "Process_family"),
+    process: field(row, "process_node", "Process_node"),
+    variant: field(row, "variant_node", "Variant_node", "process_node", "Process_node") || "Unknown",
+    libraryOption: field(row, "library_option_raw", "Library_option"),
+    libraryClass: field(row, "library_bucket", "Library_class") || "Unlabeled",
+    structure: field(row, "structure", "Structure"),
+    cpp: firstNumber(row, "cpp_cgp_nm", "CPP_CGP_nm"),
+    height: firstNumber(row, "cell_height_nm", "Cell_height_nm"),
+    trackCount: firstNumber(row, "track_count"),
+    breakModel: field(row, "diffusion_break_model", "Diffusion_break_model"),
+    breakExtra: firstNumber(row, "break_extra_cpp", "Break_extra_CPP"),
     logicCalc: calc,
     logicReported: reported,
     logic: Number.isFinite(reported) ? reported : calc,
-    sramCell: toNumber(row.SRAM_bitcell_um2),
-    sram: toNumber(row.SRAM_ideal_Mb_per_mm2) || toNumber(row.SRAM_reported_Mb_mm2),
-    confidence: row.Confidence || "Unknown",
-    notes: row.Notes,
-    source: row.Density_source_URL || row.Geometry_source_URL || row.SRAM_source_URL,
+    sramCell: firstNumber(row, "sram_bitcell_um2", "SRAM_bitcell_um2"),
+    sram: Number.isFinite(sramIdeal) ? sramIdeal : sramReported,
+    confidence,
+    geometryConfidence: firstNumber(row, "geometry_confidence"),
+    logicConfidence: firstNumber(row, "logic_density_confidence"),
+    sramConfidence: firstNumber(row, "sram_confidence"),
+    reviewRequired: parseBoolean(field(row, "review_required")),
+    notes: field(row, "notes", "Notes"),
+    source: field(row, "density_source_url", "Density_source_URL", "geometry_source_url", "Geometry_source_URL", "sram_source_url", "SRAM_source_URL", "source_url"),
   };
+}
+
+function field(row, ...keys) {
+  for (const key of keys) {
+    const value = row[key];
+    if (value !== undefined && value !== null && String(value).trim() !== "") {
+      return String(value).trim();
+    }
+  }
+  return "";
+}
+
+function firstNumber(row, ...keys) {
+  for (const key of keys) {
+    const value = toNumber(row[key]);
+    if (Number.isFinite(value)) {
+      return value;
+    }
+  }
+  return NaN;
+}
+
+function confidenceScoreLabel(score) {
+  if (!Number.isFinite(score)) return "Unknown";
+  if (score >= 4) return "High (4/4)";
+  if (score >= 3) return "Medium-High (3/4)";
+  if (score >= 2) return "Medium-Low (2/4)";
+  if (score >= 1) return "Low (1/4)";
+  return "Missing (0/4)";
+}
+
+function parseBoolean(value) {
+  return ["true", "1", "yes"].includes(String(value || "").toLowerCase());
 }
 
 function processBucket(row) {
@@ -1144,8 +1260,9 @@ function roundRect(ctx, x, y, width, height, radius) {
 
 function resizeCanvasToDisplay(canvas) {
   const container = canvas.parentElement;
-  const targetWidth = Math.max(320, Math.floor(container.clientWidth - 20));
-  const targetHeight = Math.round(targetWidth * 0.66);
+  const availableWidth = Math.max(0, Math.floor(container.clientWidth - 20));
+  const targetWidth = clamp(availableWidth, 240, 1100);
+  const targetHeight = Math.round(targetWidth * (targetWidth < 520 ? 0.9 : 0.66));
   const dpr = window.devicePixelRatio || 1;
   canvas.style.width = `${targetWidth}px`;
   canvas.style.height = `${targetHeight}px`;
