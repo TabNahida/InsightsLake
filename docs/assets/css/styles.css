@@ -640,7 +640,6 @@ td {
 
 .formula-box,
 .nearest-match,
-.yield-chart-wrap,
 .wafer-map-wrap {
   grid-column: 1 / -1;
   border: 1px solid rgba(143, 171, 158, 0.18);
@@ -675,30 +674,18 @@ td {
   font-size: 0.88rem;
 }
 
-.yield-chart-wrap,
 .wafer-map-wrap {
   overflow: hidden;
   padding: 10px;
 }
 
-.yield-chart-wrap {
-  min-height: 280px;
-}
-
 .wafer-map-wrap {
-  min-height: 420px;
-}
-
-#yieldCanvas {
-  display: block;
-  width: 100%;
-  height: 280px;
+  min-height: 520px;
 }
 
 #waferCutCanvas {
   display: block;
-  width: 100%;
-  height: 420px;
+  margin: 0 auto;
 }
 
 .reports-band {
@@ -846,8 +833,8 @@ td {
     min-height: 340px;
   }
 
-  #waferCutCanvas {
-    height: 360px;
+  .wafer-map-wrap {
+    min-height: 320px;
   }
 
   .rank-row {

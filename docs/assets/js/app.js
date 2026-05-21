@@ -75,8 +75,6 @@ const I18N = {
     "yield.dieHeight": "Die height mm",
     "yield.alpha": "Clustering alpha",
     "yield.wafersPerMonth": "Wafers per month",
-    "yield.chartTitle": "Yield by die area",
-    "yield.chartAxis": "Die area mm2",
     "yield.waferTitle": "Wafer cut map",
     "yield.goodLegend": "good die",
     "yield.badLegend": "defect loss",
@@ -156,8 +154,6 @@ const I18N = {
     "yield.dieHeight": "芯片高度 mm",
     "yield.alpha": "聚集参数 alpha",
     "yield.wafersPerMonth": "月投片",
-    "yield.chartTitle": "不同 die 面积良率",
-    "yield.chartAxis": "Die area mm2",
     "yield.waferTitle": "晶圆切割示意图",
     "yield.goodLegend": "良品 die",
     "yield.badLegend": "缺陷损失",
@@ -231,7 +227,6 @@ function cacheElements() {
     "grossDie",
     "goodDie",
     "monthlyGoodDie",
-    "yieldCanvas",
     "waferCutCanvas",
     "waferCanvas",
     "waferNode",
@@ -353,6 +348,7 @@ function initPageControls() {
     ["dieWidth", "dieHeight", "defectDensity", "yieldModel", "clusterAlpha", "waferDiameter", "wafersPerMonth"].forEach((id) => {
       els[id]?.addEventListener("input", renderYieldAnalyzer);
     });
+    window.addEventListener("resize", debounce(renderYieldAnalyzer, 120));
   }
 }
 
@@ -656,7 +652,6 @@ function renderYieldAnalyzer() {
   els.goodDie.textContent = formatNumber(good, 0);
   els.monthlyGoodDie.textContent = formatNumber(good * wafersPerMonth, 0);
 
-  drawYieldChart({ dieArea, defectDensity, model, alpha });
   drawWaferCutMap({ dieWidth, dieHeight, dieArea, waferDiameter, waferDies, good });
 }
 
@@ -673,82 +668,6 @@ function calculateYield(dieAreaMm2, defectDensity, model, alpha) {
     return Math.pow(1 + ad / alpha, -alpha);
   }
   return Math.exp(-ad);
-}
-
-function drawYieldChart({ dieArea, defectDensity, model, alpha }) {
-  const canvas = els.yieldCanvas;
-  if (!canvas) {
-    return;
-  }
-  const ctx = canvas.getContext("2d");
-  const width = canvas.width;
-  const height = canvas.height;
-  const areas = [25, 50, 75, 100, 150, 200, 300, 450, 600];
-  const yields = areas.map((area) => calculateYield(area, defectDensity, model, alpha));
-
-  ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#070a09";
-  ctx.fillRect(0, 0, width, height);
-
-  const left = 48;
-  const right = 18;
-  const top = 34;
-  const bottom = 38;
-  const chartW = width - left - right;
-  const chartH = height - top - bottom;
-
-  ctx.fillStyle = "#c5d6cd";
-  ctx.font = "700 13px Segoe UI";
-  ctx.textAlign = "left";
-  ctx.fillText(t("yield.chartTitle"), left, 20);
-  ctx.textAlign = "right";
-  ctx.fillStyle = "#95a8a0";
-  ctx.font = "12px Segoe UI";
-  ctx.fillText(t("yield.chartAxis"), width - right, 20);
-  ctx.textAlign = "left";
-
-  ctx.strokeStyle = "rgba(149, 168, 160, 0.25)";
-  ctx.lineWidth = 1;
-  for (let i = 0; i <= 4; i += 1) {
-    const y = top + (chartH * i) / 4;
-    ctx.beginPath();
-    ctx.moveTo(left, y);
-    ctx.lineTo(width - right, y);
-    ctx.stroke();
-    ctx.fillStyle = "#95a8a0";
-    ctx.font = "12px Segoe UI";
-    ctx.fillText(`${100 - i * 25}%`, 8, y + 4);
-  }
-
-  const step = chartW / areas.length;
-  const barW = Math.max(18, step - 13);
-  areas.forEach((area, index) => {
-    const value = yields[index];
-    const barH = value * chartH;
-    const x = left + index * step + (step - barW) / 2;
-    const y = top + chartH - barH;
-    const gradient = ctx.createLinearGradient(0, y, 0, top + chartH);
-    gradient.addColorStop(0, "#46efb4");
-    gradient.addColorStop(0.72, "#ffbd54");
-    gradient.addColorStop(1, "#f56b9d");
-    ctx.fillStyle = gradient;
-    roundRect(ctx, x, y, barW, barH, 5);
-    ctx.fill();
-
-    if (Math.abs(area - dieArea) < 1) {
-      ctx.strokeStyle = "#edf6f0";
-      ctx.lineWidth = 2;
-      roundRect(ctx, x - 3, y - 3, barW + 6, barH + 6, 6);
-      ctx.stroke();
-    }
-
-    ctx.fillStyle = "#95a8a0";
-    ctx.font = "12px Segoe UI";
-    ctx.textAlign = "center";
-    ctx.fillText(area, x + barW / 2, height - 12);
-  });
-
-  ctx.textAlign = "left";
 }
 
 function generateWaferDies({ dieWidth, dieHeight, waferDiameter }) {
@@ -785,9 +704,10 @@ function drawWaferCutMap({ dieWidth, dieHeight, dieArea, waferDiameter, waferDie
   if (!canvas) {
     return;
   }
+  const size = resizeCanvasToDisplay(canvas);
   const ctx = canvas.getContext("2d");
-  const width = canvas.width;
-  const height = canvas.height;
+  const width = size.width;
+  const height = size.height;
   const cx = width * 0.5;
   const cy = height * 0.54;
   const radius = Math.min(width, height) * 0.39;
@@ -1220,4 +1140,33 @@ function roundRect(ctx, x, y, width, height, radius) {
   ctx.arcTo(x, y + height, x, y, r);
   ctx.arcTo(x, y, x + width, y, r);
   ctx.closePath();
+}
+
+function resizeCanvasToDisplay(canvas) {
+  const container = canvas.parentElement;
+  const targetWidth = Math.max(320, Math.floor(container.clientWidth - 20));
+  const targetHeight = Math.round(targetWidth * 0.66);
+  const dpr = window.devicePixelRatio || 1;
+  canvas.style.width = `${targetWidth}px`;
+  canvas.style.height = `${targetHeight}px`;
+  const rect = canvas.getBoundingClientRect();
+  const cssWidth = rect.width;
+  const cssHeight = rect.height;
+  const pixelWidth = Math.round(cssWidth * dpr);
+  const pixelHeight = Math.round(cssHeight * dpr);
+  if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+    canvas.width = pixelWidth;
+    canvas.height = pixelHeight;
+  }
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { width: cssWidth, height: cssHeight };
+}
+
+function debounce(fn, wait) {
+  let timer;
+  return (...args) => {
+    window.clearTimeout(timer);
+    timer = window.setTimeout(() => fn(...args), wait);
+  };
 }
