@@ -36,7 +36,7 @@
         <p class="eyebrow" data-i18n="reports.eyebrow">SOURCE REPORTS</p>
         <h1 data-i18n="reports.title">Reports and data exports</h1>
         <p class="lead" data-i18n="reports.lead">
-          Download the v0.4.1 normalized CSV exports used by the interactive pages.
+          Download the v0.4.2 normalized CSV exports used by the interactive pages.
         </p>
       </section>
 
@@ -45,7 +45,7 @@
           <div class="section-head compact release-head">
             <div>
               <p class="eyebrow" data-i18n="reports.updateEyebrow">LATEST UPDATE</p>
-              <h2><span data-current-version>v0.4.1</span> <span data-i18n="reports.updateTitle">release summary</span></h2>
+              <h2><span data-current-version>v0.4.2</span> <span data-i18n="reports.updateTitle">release summary</span></h2>
             </div>
             <a
               class="command primary"
@@ -60,11 +60,13 @@
             Short release notes for the current public dataset refresh.
           </p>
           <ul class="release-list">
-            <li data-i18n="reports.updateItem1">Main dataset coverage increases from 71 to 72 rows.</li>
-            <li data-i18n="reports.updateItem2">Raw source coverage expands from 48 to 60 entries.</li>
-            <li data-i18n="reports.updateItem3">Primary exports now carry richer metadata and context columns.</li>
+            <li data-i18n="reports.updateItem1">Main dataset coverage increases from 72 to 75 rows.</li>
+            <li data-i18n="reports.updateItem2">Raw source coverage expands from 60 to 64 entries.</li>
+            <li data-i18n="reports.updateItem3">
+              N2 is split into official generic and leaked HD comparison rows, and the Intel 18A HD comparison density is corrected.
+            </li>
             <li data-i18n="reports.updateItem4">
-              Data quality reporting now tracks row-level issues instead of only the older summary view.
+              Rapidus 2HP official and leaked comparison rows are added to the compact public dataset.
             </li>
           </ul>
         </div>
@@ -74,32 +76,32 @@
         <div class="report-grid">
           <a
             class="report-card primary-report"
-            href="assets/data/cgp_ch_density_sram_compare_v0_4_1.csv"
+            href="assets/data/cgp_ch_density_sram_compare_v0_4_2.csv"
             data-download="compare"
           >
             <span>CSV</span>
-            <strong>CGP / CH / Density / SRAM Dataset <span data-current-version>v0.4.1</span></strong>
+            <strong>CGP / CH / Density / SRAM Dataset <span data-current-version>v0.4.2</span></strong>
             <small data-i18n="reports.csvDesc">Normalized data source for the static site and downstream scripts.</small>
           </a>
-          <a class="report-card" href="assets/data/data_quality_report_v0_4_1.csv" data-download="quality">
+          <a class="report-card" href="assets/data/data_quality_report_v0_4_2.csv" data-download="quality">
             <span>CSV</span>
-            <strong>Data Quality Report <span data-current-version>v0.4.1</span></strong>
+            <strong>Data Quality Report <span data-current-version>v0.4.2</span></strong>
             <small data-i18n="reports.qualityDesc">Data quality summary with coverage counts and records marked for review.</small>
           </a>
-          <a class="report-card" href="assets/data/derived_metrics_v0_4_1.csv" data-download="metrics">
+          <a class="report-card" href="assets/data/derived_metrics_v0_4_2.csv" data-download="metrics">
             <span>CSV</span>
-            <strong>Derived Metrics <span data-current-version>v0.4.1</span></strong>
+            <strong>Derived Metrics <span data-current-version>v0.4.2</span></strong>
             <small data-i18n="reports.metricsDesc">Derived density and SRAM calculations with formula inputs and assumptions.</small>
           </a>
-          <a class="report-card" href="assets/data/process_observations_v0_4_1.csv" data-download="observations">
+          <a class="report-card" href="assets/data/process_observations_v0_4_2.csv" data-download="observations">
             <span>CSV</span>
-            <strong>Process Observations <span data-current-version>v0.4.1</span></strong>
+            <strong>Process Observations <span data-current-version>v0.4.2</span></strong>
             <small data-i18n="reports.observationsDesc">Normalized process observations before derived metrics are attached.</small>
           </a>
-          <a class="report-card" href="assets/data/raw_sources_v0_4_1.csv" data-download="sources">
+          <a class="report-card" href="assets/data/raw_sources_v0_4_2.csv" data-download="sources">
             <span>CSV</span>
-            <strong>Raw Sources <span data-current-version>v0.4.1</span></strong>
-            <small data-i18n="reports.sourcesDesc">Raw public source index used by the v0.4 report.</small>
+            <strong>Raw Sources <span data-current-version>v0.4.2</span></strong>
+            <small data-i18n="reports.sourcesDesc">Raw public source index used by the v0.4.2 report.</small>
           </a>
           <a class="report-card legacy-report" href="assets/data/foundry_process_density_public_v0_3.xlsx" data-download="legacyWorkbook">
             <span>XLSX</span>
