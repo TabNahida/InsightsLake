@@ -1,4 +1,18 @@
-const DATA_URL = "assets/data/cgp_ch_density_sram_compare_v0_4.csv";
+const SITE_CONFIG = Object.freeze({
+  currentVersion: "v0.4.1",
+  dataUrl: "assets/data/cgp_ch_density_sram_compare_v0_4_1.csv",
+  downloads: Object.freeze({
+    compare: "assets/data/cgp_ch_density_sram_compare_v0_4_1.csv",
+    quality: "assets/data/data_quality_report_v0_4_1.csv",
+    metrics: "assets/data/derived_metrics_v0_4_1.csv",
+    observations: "assets/data/process_observations_v0_4_1.csv",
+    sources: "assets/data/raw_sources_v0_4_1.csv",
+    legacyWorkbook: "assets/data/foundry_process_density_public_v0_3.xlsx",
+  }),
+  githubUrl: "https://github.com/TabNahida",
+});
+
+const DATA_URL = SITE_CONFIG.dataUrl;
 const ALL_VALUE = "__all";
 
 const I18N = {
@@ -10,8 +24,8 @@ const I18N = {
     "nav.yield": "Yield",
     "nav.reports": "Reports",
     "common.downloadXlsx": "Download XLSX",
-    "common.downloadCsv": "Download v0.4 CSV",
-    "common.dataQualityCsv": "Data quality CSV",
+    "common.downloadCsv": "Download v0.4.1 CSV",
+    "common.dataQualityCsv": "Data quality v0.4.1 CSV",
     "common.records": "{count} records",
     "common.rows": "{count} rows",
     "common.unlabeled": "Unlabeled",
@@ -20,7 +34,7 @@ const I18N = {
     "home.eyebrow": "PUBLIC FOUNDRY DATASET",
     "home.title": "Process Density and Library Analytics",
     "home.lead":
-      "A static analysis console for the v0.4 public semiconductor process dataset, combining logic density, SRAM bitcell, CPP/CGP, cell height, and source confidence.",
+      "A static analysis console for the v0.4.1 public semiconductor process dataset, combining logic density, SRAM bitcell, CPP/CGP, cell height, and source confidence.",
     "home.viewRanking": "Open ranking",
     "home.snapshotEyebrow": "FOUNDRY SNAPSHOT",
     "home.snapshotTitle": "Public sample coverage",
@@ -82,13 +96,21 @@ const I18N = {
     "yield.mapStats": "die {width} x {height} mm | area {area} mm2 | gross {gross} | good {good} | lost {bad}",
     "reports.eyebrow": "SOURCE REPORTS",
     "reports.title": "Reports and data exports",
-    "reports.lead": "Download the v0.4 normalized CSV exports used by the interactive pages.",
+    "reports.lead": "Download the v0.4.1 normalized CSV exports used by the interactive pages.",
     "reports.xlsxDesc": "Legacy v0.3 workbook with foundry sheets, comparison views, source index, and dashboard.",
-    "reports.csvDesc": "Primary v0.4 CGP / cell-height / density / SRAM dataset.",
+    "reports.csvDesc": "Primary v0.4.1 CGP / cell-height / density / SRAM dataset.",
     "reports.qualityDesc": "Data quality summary with coverage counts and records marked for review.",
     "reports.metricsDesc": "Derived density and SRAM calculations with formula inputs and assumptions.",
     "reports.observationsDesc": "Normalized process observations before derived metrics are attached.",
-    "reports.sourcesDesc": "Raw public source index used by the v0.4 report.",
+    "reports.sourcesDesc": "Raw public source index used by the v0.4.1 report.",
+    "reports.updateEyebrow": "LATEST UPDATE",
+    "reports.updateTitle": "release summary",
+    "reports.updateLead": "Short release notes for the current public dataset refresh.",
+    "reports.updateItem1": "Main dataset coverage increases from 71 to 72 rows.",
+    "reports.updateItem2": "Raw source coverage expands from 48 to 60 entries.",
+    "reports.updateItem3": "Primary exports now carry richer metadata and context columns.",
+    "reports.updateItem4": "Data quality reporting now tracks row-level issues instead of only the older summary view.",
+    "reports.githubCta": "Visit GitHub profile",
     "footer.note": "Public-source estimates for process comparison and early planning.",
   },
   zh: {
@@ -99,8 +121,8 @@ const I18N = {
     "nav.yield": "良率分析",
     "nav.reports": "报告",
     "common.downloadXlsx": "下载 XLSX",
-    "common.downloadCsv": "下载 v0.4 CSV",
-    "common.dataQualityCsv": "数据质量 CSV",
+    "common.downloadCsv": "下载 v0.4.1 CSV",
+    "common.dataQualityCsv": "下载 v0.4.1 数据质量 CSV",
     "common.records": "{count} 条记录",
     "common.rows": "{count} 行",
     "common.unlabeled": "未标注",
@@ -108,7 +130,7 @@ const I18N = {
     "common.dataLoadError": "数据加载失败，请确认 CSV 资产存在。",
     "home.eyebrow": "PUBLIC FOUNDRY DATASET",
     "home.title": "工艺密度与库选型分析台",
-    "home.lead": "面向 v0.4 公开工艺数据的静态分析网站，聚合逻辑密度、SRAM bitcell、CPP/CGP、cell height 与资料置信度。",
+    "home.lead": "面向 v0.4.1 公开工艺数据的静态分析网站，聚合逻辑密度、SRAM bitcell、CPP/CGP、cell height 与资料置信度。",
     "home.viewRanking": "查看排行",
     "home.snapshotEyebrow": "FOUNDRY SNAPSHOT",
     "home.snapshotTitle": "公开样本覆盖",
@@ -167,13 +189,21 @@ const I18N = {
     "yield.mapStats": "die {width} x {height} mm | 面积 {area} mm2 | gross {gross} | 良品 {good} | 损失 {bad}",
     "reports.eyebrow": "SOURCE REPORTS",
     "reports.title": "报告与数据导出",
-    "reports.lead": "下载交互页面使用的 v0.4 规范化 CSV 导出。",
+    "reports.lead": "下载交互页面使用的 v0.4.1 规范化 CSV 导出。",
     "reports.xlsxDesc": "v0.3 旧版 workbook，包含厂商分表、对比视图、来源索引和 dashboard。",
-    "reports.csvDesc": "v0.4 主数据表：CGP / cell height / density / SRAM 对比。",
+    "reports.csvDesc": "v0.4.1 主数据表：CGP / cell height / density / SRAM 对比。",
     "reports.qualityDesc": "数据质量摘要，包含覆盖率计数与需要复核的记录。",
     "reports.metricsDesc": "派生密度与 SRAM 计算，包含公式输入和假设说明。",
     "reports.observationsDesc": "挂接派生指标前的规范化工艺观察记录。",
-    "reports.sourcesDesc": "v0.4 报告使用的公开来源索引。",
+    "reports.sourcesDesc": "v0.4.1 报告使用的公开来源索引。",
+    "reports.updateEyebrow": "LATEST UPDATE",
+    "reports.updateTitle": "更新摘要",
+    "reports.updateLead": "当前公开数据集刷新所对应的简短发布说明。",
+    "reports.updateItem1": "主数据集覆盖从 71 条记录增加到 72 条。",
+    "reports.updateItem2": "公开来源索引从 48 条扩展到 60 条。",
+    "reports.updateItem3": "主要导出文件增加了更丰富的元数据与上下文字段。",
+    "reports.updateItem4": "数据质量报告从旧版汇总视图升级为逐条 issue 视图。",
+    "reports.githubCta": "访问 GitHub 主页",
     "footer.note": "公开资料口径，计算结果用于工艺对比与早期方案预估。",
   },
 };
@@ -189,6 +219,7 @@ const els = {};
 
 document.addEventListener("DOMContentLoaded", () => {
   cacheElements();
+  applySiteConfig();
   initLanguage();
   activateCurrentNav();
   loadData();
@@ -243,6 +274,25 @@ function cacheElements() {
     "waferDensity",
   ].forEach((id) => {
     els[id] = document.getElementById(id);
+  });
+}
+
+function applySiteConfig() {
+  document.querySelectorAll("[data-download]").forEach((link) => {
+    const href = SITE_CONFIG.downloads[link.dataset.download];
+    if (href) {
+      link.href = href;
+    }
+  });
+
+  document.querySelectorAll("[data-current-version]").forEach((node) => {
+    node.textContent = SITE_CONFIG.currentVersion;
+  });
+
+  document.querySelectorAll("[data-github-home]").forEach((link) => {
+    link.href = SITE_CONFIG.githubUrl;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
   });
 }
 
