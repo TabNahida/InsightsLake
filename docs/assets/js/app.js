@@ -257,18 +257,54 @@ function cacheElements() {
     "densityNeedle",
     "nearestMatch",
     "yieldForm",
+    "logicFoldingForm",
+    "logicFoldingCta",
     "dieWidth",
     "dieHeight",
+    "scribeX",
+    "scribeY",
     "defectDensity",
     "yieldModel",
     "clusterAlpha",
     "waferDiameter",
+    "edgeLoss",
+    "notchKeepOut",
+    "substrateCost",
+    "reticleWidth",
+    "reticleHeight",
+    "halfFieldExposure",
+    "autoOptimizeReticle",
+    "reticleOffsetX",
+    "reticleOffsetY",
+    "showReticleGrid",
+    "showReticleBackground",
+    "layerCount",
+    "logicLayerControls",
+    "bondingControls",
     "wafersPerMonth",
     "yieldPercent",
     "grossDie",
     "goodDie",
     "monthlyGoodDie",
+    "fullDieCount",
+    "defectiveDieCount",
+    "partialDieCount",
+    "excludedDieCount",
+    "costPerGoodDie",
+    "waferArea",
+    "totalDieArea",
+    "wasteArea",
+    "reticleDieCount",
+    "reticleUtilization",
+    "stackYieldPercent",
+    "stackGoodDie",
+    "stackBondingYield",
+    "stackCostPerGoodDie",
+    "stackReticleDieCount",
     "waferCutCanvas",
+    "standardReticleCanvas",
+    "logicWaferStackCanvas",
+    "logicReticleCanvas",
     "waferCanvas",
     "waferNode",
     "waferDensity",
@@ -405,10 +441,67 @@ function initPageControls() {
   }
 
   if (els.yieldForm) {
-    ["dieWidth", "dieHeight", "defectDensity", "yieldModel", "clusterAlpha", "waferDiameter", "wafersPerMonth"].forEach((id) => {
+    [
+      "dieWidth",
+      "dieHeight",
+      "scribeX",
+      "scribeY",
+      "defectDensity",
+      "yieldModel",
+      "clusterAlpha",
+      "waferDiameter",
+      "edgeLoss",
+      "notchKeepOut",
+      "substrateCost",
+      "reticleWidth",
+      "reticleHeight",
+      "halfFieldExposure",
+      "autoOptimizeReticle",
+      "reticleOffsetX",
+      "reticleOffsetY",
+      "showReticleGrid",
+      "showReticleBackground",
+      "wafersPerMonth",
+    ].forEach((id) => {
       els[id]?.addEventListener("input", renderYieldAnalyzer);
     });
     window.addEventListener("resize", debounce(renderYieldAnalyzer, 120));
+  }
+
+  if (els.logicFoldingForm) {
+    renderLogicFoldingLayerControls();
+    [
+      "dieWidth",
+      "dieHeight",
+      "scribeX",
+      "scribeY",
+      "waferDiameter",
+      "edgeLoss",
+      "notchKeepOut",
+      "substrateCost",
+      "reticleWidth",
+      "reticleHeight",
+      "halfFieldExposure",
+      "autoOptimizeReticle",
+      "reticleOffsetX",
+      "reticleOffsetY",
+      "showReticleGrid",
+      "showReticleBackground",
+      "layerCount",
+    ].forEach((id) => {
+      els[id]?.addEventListener("input", () => {
+        if (id === "layerCount") {
+          renderLogicFoldingLayerControls();
+        }
+        renderLogicFoldingAnalyzer();
+      });
+    });
+    els.logicFoldingForm.addEventListener("input", (event) => {
+      if (event.target.closest("#logicLayerControls, #bondingControls")) {
+        renderLogicFoldingAnalyzer();
+      }
+    });
+    window.addEventListener("resize", debounce(renderLogicFoldingAnalyzer, 120));
   }
 }
 
@@ -426,6 +519,7 @@ function renderCurrentPage() {
   renderRankingArea();
   renderDensityCalculator();
   renderYieldAnalyzer();
+  renderLogicFoldingAnalyzer();
 }
 
 function refreshRankingControls() {
@@ -718,23 +812,54 @@ function renderYieldAnalyzer() {
   }
   const dieWidth = Math.max(1, toNumber(els.dieWidth.value) || 1);
   const dieHeight = Math.max(1, toNumber(els.dieHeight.value) || 1);
+  const scribeX = Math.max(0, toNumber(els.scribeX?.value) || 0);
+  const scribeY = Math.max(0, toNumber(els.scribeY?.value) || 0);
   const dieArea = dieWidth * dieHeight;
   const defectDensity = Math.max(0, toNumber(els.defectDensity.value) || 0);
   const alpha = Math.max(0.1, toNumber(els.clusterAlpha.value) || 3);
   const waferDiameter = toNumber(els.waferDiameter.value) || 300;
+  const edgeLoss = Math.max(0, toNumber(els.edgeLoss?.value) || 0);
+  const notchKeepOut = Math.max(0, toNumber(els.notchKeepOut?.value) || 0);
+  const substrateCost = Math.max(0, toNumber(els.substrateCost?.value) || 0);
   const wafersPerMonth = Math.max(0, toNumber(els.wafersPerMonth.value) || 0);
   const model = els.yieldModel.value;
   const dieYield = calculateYield(dieArea, defectDensity, model, alpha);
-  const waferDies = generateWaferDies({ dieWidth, dieHeight, waferDiameter });
-  const gross = waferDies.length;
+  const substrate = generateSubstrateDies({ dieWidth, dieHeight, waferDiameter, edgeLoss, notchKeepOut });
+  const reticle = readReticlePacking({ dieWidth, dieHeight, scribeX, scribeY });
+  const gross = substrate.fullDies.length;
   const good = Math.round(gross * dieYield);
+  const defective = Math.max(0, gross - good);
+  const waferArea = Math.PI * Math.pow(waferDiameter / 2, 2);
+  const totalDieArea = gross * dieArea;
+  const wasteArea = Math.max(0, waferArea - totalDieArea);
 
   els.yieldPercent.textContent = formatNumber(dieYield * 100, 1);
   els.grossDie.textContent = formatNumber(gross, 0);
   els.goodDie.textContent = formatNumber(good, 0);
   els.monthlyGoodDie.textContent = formatNumber(good * wafersPerMonth, 0);
+  setText("fullDieCount", formatNumber(gross, 0));
+  setText("defectiveDieCount", formatNumber(defective, 0));
+  setText("partialDieCount", formatNumber(substrate.partialDies.length, 0));
+  setText("excludedDieCount", formatNumber(substrate.excludedDies.length, 0));
+  setText("costPerGoodDie", good > 0 ? `$${formatNumber(substrateCost / good, 2)}` : "--");
+  setText("waferArea", `${formatNumber(waferArea / 100, 2)} cm2`);
+  setText("totalDieArea", `${formatNumber(totalDieArea / 100, 2)} cm2`);
+  setText("wasteArea", `${formatNumber(wasteArea / 100, 2)} cm2`);
+  updateReticleReadout(reticle);
 
-  drawWaferCutMap({ dieWidth, dieHeight, dieArea, waferDiameter, waferDies, good });
+  drawWaferCutMap({
+    dieWidth,
+    dieHeight,
+    dieArea,
+    waferDiameter,
+    waferDies: substrate.fullDies,
+    partialDies: substrate.partialDies,
+    excludedDies: substrate.excludedDies,
+    good,
+    reticlePacking: reticle,
+    showReticleGrid: Boolean(els.showReticleGrid?.checked),
+  });
+  drawReticleResults(els.standardReticleCanvas, reticle, { showBackground: Boolean(els.showReticleBackground?.checked) });
 }
 
 function calculateYield(dieAreaMm2, defectDensity, model, alpha) {
@@ -750,6 +875,335 @@ function calculateYield(dieAreaMm2, defectDensity, model, alpha) {
     return Math.pow(1 + ad / alpha, -alpha);
   }
   return Math.exp(-ad);
+}
+
+function calculateLogicFoldingYield({ layerYields, bondingYields }) {
+  return [...layerYields, ...bondingYields].reduce((product, value) => product * clamp(Number(value) || 0, 0, 1), 1);
+}
+
+function calculateReticlePacking({ dieWidth, dieHeight, scribeX = 0, scribeY = 0, reticleWidth = 26, reticleHeight = 33, halfField = false }) {
+  const safeDieWidth = Math.max(0, Number(dieWidth) || 0);
+  const safeDieHeight = Math.max(0, Number(dieHeight) || 0);
+  const safeScribeX = Math.max(0, Number(scribeX) || 0);
+  const safeScribeY = Math.max(0, Number(scribeY) || 0);
+  const usableWidth = Math.max(0, (Number(reticleWidth) || 26) * (halfField ? 0.5 : 1));
+  const usableHeight = Math.max(0, Number(reticleHeight) || 33);
+  const pitchX = safeDieWidth + safeScribeX;
+  const pitchY = safeDieHeight + safeScribeY;
+  const columns = pitchX > 0 ? Math.max(0, Math.floor((usableWidth + safeScribeX) / pitchX)) : 0;
+  const rows = pitchY > 0 ? Math.max(0, Math.floor((usableHeight + safeScribeY) / pitchY)) : 0;
+  const diePerReticle = columns * rows;
+  const dieArea = safeDieWidth * safeDieHeight;
+  const fieldArea = usableWidth * usableHeight;
+  const utilization = fieldArea > 0 ? clamp((diePerReticle * dieArea) / fieldArea, 0, 1) : 0;
+  const occupiedWidth = columns > 0 ? columns * safeDieWidth + Math.max(0, columns - 1) * safeScribeX : 0;
+  const occupiedHeight = rows > 0 ? rows * safeDieHeight + Math.max(0, rows - 1) * safeScribeY : 0;
+  return {
+    reticleWidth: Number(reticleWidth) || 26,
+    reticleHeight: Number(reticleHeight) || 33,
+    usableWidth,
+    usableHeight,
+    dieWidth: safeDieWidth,
+    dieHeight: safeDieHeight,
+    scribeX: safeScribeX,
+    scribeY: safeScribeY,
+    pitchX,
+    pitchY,
+    columns,
+    rows,
+    diePerReticle,
+    utilization,
+    occupiedWidth,
+    occupiedHeight,
+    offsetX: Math.max(0, (usableWidth - occupiedWidth) / 2),
+    offsetY: Math.max(0, (usableHeight - occupiedHeight) / 2),
+  };
+}
+
+function readReticlePacking({ dieWidth, dieHeight, scribeX, scribeY }) {
+  const auto = els.autoOptimizeReticle?.checked !== false;
+  const packing = calculateReticlePacking({
+    dieWidth,
+    dieHeight,
+    scribeX,
+    scribeY,
+    reticleWidth: Math.max(1, toNumber(els.reticleWidth?.value) || 26),
+    reticleHeight: Math.max(1, toNumber(els.reticleHeight?.value) || 33),
+    halfField: Boolean(els.halfFieldExposure?.checked),
+  });
+  if (!auto) {
+    packing.offsetX = clamp(toNumber(els.reticleOffsetX?.value) || 0, 0, Math.max(0, packing.usableWidth - packing.occupiedWidth));
+    packing.offsetY = clamp(toNumber(els.reticleOffsetY?.value) || 0, 0, Math.max(0, packing.usableHeight - packing.occupiedHeight));
+  } else {
+    if (els.reticleOffsetX) {
+      els.reticleOffsetX.value = formatNumber(packing.offsetX, 3);
+    }
+    if (els.reticleOffsetY) {
+      els.reticleOffsetY.value = formatNumber(packing.offsetY, 3);
+    }
+  }
+  return packing;
+}
+
+function generateSubstrateDies({ dieWidth, dieHeight, waferDiameter, edgeLoss = 0, notchKeepOut = 0 }) {
+  const waferRadius = waferDiameter / 2;
+  const usableRadius = Math.max(0, waferRadius - edgeLoss);
+  const columns = Math.ceil(waferDiameter / dieWidth) + 2;
+  const rows = Math.ceil(waferDiameter / dieHeight) + 2;
+  const fullDies = [];
+  const partialDies = [];
+  const excludedDies = [];
+  const seed = Math.round(dieWidth * 37 + dieHeight * 71 + waferDiameter + edgeLoss * 11 + notchKeepOut * 19);
+
+  for (let row = -rows; row <= rows; row += 1) {
+    for (let col = -columns; col <= columns; col += 1) {
+      const centerX = col * dieWidth;
+      const centerY = row * dieHeight;
+      const x = centerX - dieWidth / 2;
+      const y = centerY - dieHeight / 2;
+      const cell = {
+        x,
+        y,
+        width: dieWidth,
+        height: dieHeight,
+        row,
+        col,
+        noise: deterministicNoise(row, col, seed),
+      };
+      const corners = dieCorners(x, y, dieWidth, dieHeight);
+      const centerInsideWafer = Math.hypot(centerX, centerY) <= waferRadius;
+      const anyCornerInsideWafer = corners.some(([px, py]) => Math.hypot(px, py) <= waferRadius);
+      if (!centerInsideWafer && !anyCornerInsideWafer) {
+        continue;
+      }
+      if (corners.some(([px, py]) => Math.hypot(px, py) > waferRadius)) {
+        partialDies.push(cell);
+        continue;
+      }
+      const fullInsideUsable = corners.every(([px, py]) => Math.hypot(px, py) <= usableRadius);
+      const notchExcluded = isInsideNotchKeepOut(centerX, centerY, waferRadius, notchKeepOut);
+      if (fullInsideUsable && !notchExcluded) {
+        fullDies.push(cell);
+      } else {
+        excludedDies.push(cell);
+      }
+    }
+  }
+
+  return { fullDies, partialDies, excludedDies };
+}
+
+function dieCorners(x, y, dieWidth, dieHeight) {
+  return [
+    [x, y],
+    [x + dieWidth, y],
+    [x, y + dieHeight],
+    [x + dieWidth, y + dieHeight],
+  ];
+}
+
+function isInsideNotchKeepOut(x, y, radius, notchKeepOut) {
+  if (notchKeepOut <= 0) {
+    return false;
+  }
+  return y > radius - notchKeepOut * 2.4 && Math.abs(x) < notchKeepOut * 2.5;
+}
+
+function renderLogicFoldingLayerControls() {
+  if (!els.logicLayerControls || !els.bondingControls) {
+    return;
+  }
+  const previous = readLogicFoldingInputs();
+  const count = Math.max(2, Math.round(toNumber(els.layerCount?.value) || 2));
+  if (els.layerCount) {
+    els.layerCount.value = count;
+  }
+
+  els.logicLayerControls.innerHTML = Array.from({ length: count }, (_, index) => {
+    const layer = previous.layers[index] || {};
+    return `
+      <article class="layer-card">
+        <strong>Layer ${index + 1}</strong>
+        <label>
+          <span>Yield model</span>
+          <select data-layer-model="${index}">
+            ${yieldModelOptions(layer.model || "negative")}
+          </select>
+        </label>
+        <label>
+          <span>D0 defects/cm2</span>
+          <input data-layer-d0="${index}" type="number" min="0" step="0.01" value="${escapeHtml(layer.defectDensity ?? defaultLayerD0(index))}" />
+        </label>
+        <label>
+          <span>Alpha</span>
+          <input data-layer-alpha="${index}" type="number" min="0.1" step="0.1" value="${escapeHtml(layer.alpha ?? 3)}" />
+        </label>
+      </article>
+    `;
+  }).join("");
+
+  els.bondingControls.innerHTML = Array.from({ length: count - 1 }, (_, index) => {
+    const value = previous.bondingYields[index] ?? 99.5;
+    return `
+      <label class="bond-card">
+        <span>Bond ${index + 1} yield %</span>
+        <input data-bond-yield="${index}" type="number" min="0" max="100" step="0.01" value="${escapeHtml(value)}" />
+      </label>
+    `;
+  }).join("");
+}
+
+function yieldModelOptions(selected) {
+  return [
+    ["poisson", "Poisson"],
+    ["murphy", "Murphy"],
+    ["negative", "Negative binomial"],
+  ].map(([value, label]) => `<option value="${value}"${value === selected ? " selected" : ""}>${label}</option>`).join("");
+}
+
+function defaultLayerD0(index) {
+  return formatNumber(0.08 + index * 0.02, 2);
+}
+
+function readLogicFoldingInputs() {
+  const layers = [];
+  els.logicLayerControls?.querySelectorAll(".layer-card").forEach((card, index) => {
+    layers[index] = {
+      model: card.querySelector(`[data-layer-model="${index}"]`)?.value || "negative",
+      defectDensity: card.querySelector(`[data-layer-d0="${index}"]`)?.value || defaultLayerD0(index),
+      alpha: card.querySelector(`[data-layer-alpha="${index}"]`)?.value || 3,
+    };
+  });
+  const bondingYields = [];
+  els.bondingControls?.querySelectorAll("[data-bond-yield]").forEach((input, index) => {
+    bondingYields[index] = input.value || 99.5;
+  });
+  return { layers, bondingYields };
+}
+
+function renderLogicFoldingAnalyzer() {
+  if (!els.stackYieldPercent) {
+    return;
+  }
+  const dieWidth = Math.max(1, toNumber(els.dieWidth.value) || 1);
+  const dieHeight = Math.max(1, toNumber(els.dieHeight.value) || 1);
+  const scribeX = Math.max(0, toNumber(els.scribeX?.value) || 0);
+  const scribeY = Math.max(0, toNumber(els.scribeY?.value) || 0);
+  const dieArea = dieWidth * dieHeight;
+  const waferDiameter = toNumber(els.waferDiameter.value) || 300;
+  const edgeLoss = Math.max(0, toNumber(els.edgeLoss?.value) || 0);
+  const notchKeepOut = Math.max(0, toNumber(els.notchKeepOut?.value) || 0);
+  const substrateCost = Math.max(0, toNumber(els.substrateCost?.value) || 0);
+  const substrate = generateSubstrateDies({ dieWidth, dieHeight, waferDiameter, edgeLoss, notchKeepOut });
+  const reticle = readReticlePacking({ dieWidth, dieHeight, scribeX, scribeY });
+  const { layers, bondingYields } = readLogicFoldingInputs();
+  const layerYields = layers.map((layer) =>
+    calculateYield(dieArea, Math.max(0, toNumber(layer.defectDensity) || 0), layer.model, Math.max(0.1, toNumber(layer.alpha) || 3)),
+  );
+  const bondingFractions = bondingYields.map((value) => clamp((toNumber(value) || 0) / 100, 0, 1));
+  const bondingProduct = bondingFractions.reduce((product, value) => product * value, 1);
+  const stackYield = calculateLogicFoldingYield({ layerYields, bondingYields: bondingFractions });
+  const gross = substrate.fullDies.length;
+  const goodStacks = Math.round(gross * stackYield);
+
+  els.stackYieldPercent.textContent = formatNumber(stackYield * 100, 3);
+  els.stackGoodDie.textContent = formatNumber(goodStacks, 0);
+  els.stackBondingYield.textContent = formatNumber(bondingProduct * 100, 3);
+  els.stackCostPerGoodDie.textContent = goodStacks > 0 ? `$${formatNumber(substrateCost / goodStacks, 2)}` : "--";
+  setText("fullDieCount", formatNumber(gross, 0));
+  setText("partialDieCount", formatNumber(substrate.partialDies.length, 0));
+  setText("excludedDieCount", formatNumber(substrate.excludedDies.length, 0));
+  updateReticleReadout(reticle);
+  setText("stackReticleDieCount", `${formatNumber(reticle.diePerReticle, 0)} (${reticle.columns}x${reticle.rows})`);
+
+  drawLogicFoldingWaferStack({
+    canvas: els.logicWaferStackCanvas,
+    dieWidth,
+    dieHeight,
+    dieArea,
+    waferDiameter,
+    substrate,
+    layerYields,
+    reticlePacking: reticle,
+    showReticleGrid: Boolean(els.showReticleGrid?.checked),
+  });
+  drawReticleResults(els.logicReticleCanvas, reticle, { showBackground: Boolean(els.showReticleBackground?.checked) });
+}
+
+function drawLogicFoldingWaferStack({ canvas, dieWidth, dieHeight, dieArea, waferDiameter, substrate, layerYields, reticlePacking, showReticleGrid }) {
+  if (!canvas) {
+    return;
+  }
+  const size = resizeCanvasToDisplay(canvas);
+  const ctx = canvas.getContext("2d");
+  const width = size.width;
+  const height = size.height;
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = "#050606";
+  ctx.fillRect(0, 0, width, height);
+
+  const layers = Math.max(2, layerYields.length);
+  const radius = Math.min(height * 0.34, width / (2.1 + layers * 0.32));
+  const spacing = Math.min(radius * 0.78, Math.max(58, (width - radius * 2.2) / Math.max(1, layers)));
+  const startX = width * 0.5 - ((layers - 1) * spacing) / 2 - radius * 0.18;
+  const baseY = height * 0.43;
+  const scale = radius / (waferDiameter / 2);
+
+  for (let layer = 0; layer < layers; layer += 1) {
+    const cx = startX + layer * spacing;
+    const cy = baseY + layer * radius * 0.055;
+    const good = Math.round(substrate.fullDies.length * (layerYields[layer] || 1));
+    ctx.save();
+    ctx.globalAlpha = clamp(0.78 - layer * 0.085, 0.34, 0.78);
+    ctx.transform(1, -0.1, -0.18, 1, 0, 0);
+    drawLayerWafer(ctx, { cx, cy, radius, scale, waferDiameter, substrate, good, seedOffset: layer * 997 });
+    if (showReticleGrid && reticlePacking?.diePerReticle) {
+      drawReticleShotGrid(ctx, { cx, cy, scale, waferDiameter, reticlePacking });
+    }
+    ctx.restore();
+
+    ctx.fillStyle = `rgba(237, 246, 240, ${clamp(0.8 - layer * 0.08, 0.45, 0.8)})`;
+    ctx.font = "700 12px Segoe UI";
+    ctx.fillText(`L${layer + 1} ${formatNumber((layerYields[layer] || 0) * 100, 1)}%`, cx - radius * 0.42, height - 24 - (layers - layer - 1) * 16);
+  }
+
+  ctx.fillStyle = "rgba(17, 22, 27, 0.86)";
+  ctx.fillRect(24, height - 102, width - 48, 64);
+  ctx.fillStyle = "rgba(197, 214, 205, 0.9)";
+  ctx.font = "12px Segoe UI";
+  ctx.fillText(
+    `Shared die ${formatNumber(dieWidth, 1)} x ${formatNumber(dieHeight, 1)} mm | area ${formatNumber(dieArea, 1)} mm2 | layers ${layers}`,
+    38,
+    height - 64,
+  );
+}
+
+function drawLayerWafer(ctx, { cx, cy, radius, scale, substrate, good, seedOffset }) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.fillStyle = "rgba(18, 38, 32, 0.84)";
+  ctx.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
+
+  const fullDies = substrate.fullDies.length > 900 ? substrate.fullDies.filter((_, index) => index % Math.ceil(substrate.fullDies.length / 900) === 0) : substrate.fullDies;
+  const badCount = Math.max(0, substrate.fullDies.length - good);
+  const badSet = new Set(
+    [...substrate.fullDies]
+      .sort((a, b) => deterministicNoise(a.row, a.col, seedOffset) - deterministicNoise(b.row, b.col, seedOffset))
+      .slice(0, badCount)
+      .map((cell) => `${cell.row}:${cell.col}`),
+  );
+  fullDies.forEach((cell) => {
+    const bad = badSet.has(`${cell.row}:${cell.col}`);
+    drawWaferDieCell(ctx, cell, cx, cy, scale, bad ? "rgba(255, 117, 104, 0.64)" : "rgba(49, 236, 88, 0.64)");
+  });
+  ctx.restore();
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.72)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.stroke();
 }
 
 function generateWaferDies({ dieWidth, dieHeight, waferDiameter }) {
@@ -781,7 +1235,18 @@ function generateWaferDies({ dieWidth, dieHeight, waferDiameter }) {
   return dies;
 }
 
-function drawWaferCutMap({ dieWidth, dieHeight, dieArea, waferDiameter, waferDies, good }) {
+function drawWaferCutMap({
+  dieWidth,
+  dieHeight,
+  dieArea,
+  waferDiameter,
+  waferDies,
+  partialDies = [],
+  excludedDies = [],
+  good,
+  reticlePacking = null,
+  showReticleGrid = false,
+}) {
   const canvas = els.waferCutCanvas;
   if (!canvas) {
     return;
@@ -795,6 +1260,10 @@ function drawWaferCutMap({ dieWidth, dieHeight, dieArea, waferDiameter, waferDie
   const radius = Math.min(width, height) * 0.39;
   const scale = radius / (waferDiameter / 2);
   const visualDies = waferDies.length > 2500 ? waferDies.filter((_, index) => index % Math.ceil(waferDies.length / 2500) === 0) : waferDies;
+  const visualPartial =
+    partialDies.length > 900 ? partialDies.filter((_, index) => index % Math.ceil(partialDies.length / 900) === 0) : partialDies;
+  const visualExcluded =
+    excludedDies.length > 900 ? excludedDies.filter((_, index) => index % Math.ceil(excludedDies.length / 900) === 0) : excludedDies;
   const badCount = Math.max(0, waferDies.length - good);
   const badSet = new Set(
     [...waferDies]
@@ -812,18 +1281,20 @@ function drawWaferCutMap({ dieWidth, dieHeight, dieArea, waferDiameter, waferDie
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
   ctx.clip();
 
-  visualDies.forEach((cell) => {
-    const rectX = cx + cell.x * scale;
-    const rectY = cy + cell.y * scale;
-    const rectW = Math.max(1.2, cell.width * scale);
-    const rectH = Math.max(1.2, cell.height * scale);
-    const bad = badSet.has(`${cell.row}:${cell.col}`);
-    ctx.fillStyle = bad ? "rgba(255, 117, 104, 0.72)" : "rgba(70, 239, 180, 0.55)";
-    ctx.fillRect(rectX + 0.7, rectY + 0.7, Math.max(0.8, rectW - 1.4), Math.max(0.8, rectH - 1.4));
-    ctx.strokeStyle = "rgba(7, 10, 9, 0.75)";
-    ctx.lineWidth = 0.7;
-    ctx.strokeRect(rectX + 0.7, rectY + 0.7, Math.max(0.8, rectW - 1.4), Math.max(0.8, rectH - 1.4));
+  visualPartial.forEach((cell) => {
+    drawWaferDieCell(ctx, cell, cx, cy, scale, "rgba(255, 189, 84, 0.45)");
   });
+  visualExcluded.forEach((cell) => {
+    drawWaferDieCell(ctx, cell, cx, cy, scale, "rgba(180, 187, 194, 0.26)");
+  });
+  visualDies.forEach((cell) => {
+    const bad = badSet.has(`${cell.row}:${cell.col}`);
+    drawWaferDieCell(ctx, cell, cx, cy, scale, bad ? "rgba(255, 117, 104, 0.72)" : "rgba(70, 239, 180, 0.55)");
+  });
+
+  if (showReticleGrid && reticlePacking?.diePerReticle) {
+    drawReticleShotGrid(ctx, { cx, cy, scale, waferDiameter, reticlePacking });
+  }
 
   ctx.restore();
 
@@ -854,6 +1325,35 @@ function drawWaferCutMap({ dieWidth, dieHeight, dieArea, waferDiameter, waferDie
     }),
   });
   drawLegend(ctx, width, height);
+}
+
+function drawWaferDieCell(ctx, cell, cx, cy, scale, fillStyle) {
+  const rectX = cx + cell.x * scale;
+  const rectY = cy + cell.y * scale;
+  const rectW = Math.max(1.2, cell.width * scale);
+  const rectH = Math.max(1.2, cell.height * scale);
+  ctx.fillStyle = fillStyle;
+  ctx.fillRect(rectX + 0.7, rectY + 0.7, Math.max(0.8, rectW - 1.4), Math.max(0.8, rectH - 1.4));
+  ctx.strokeStyle = "rgba(7, 10, 9, 0.75)";
+  ctx.lineWidth = 0.7;
+  ctx.strokeRect(rectX + 0.7, rectY + 0.7, Math.max(0.8, rectW - 1.4), Math.max(0.8, rectH - 1.4));
+}
+
+function drawReticleShotGrid(ctx, { cx, cy, scale, waferDiameter, reticlePacking }) {
+  const shotWidth = reticlePacking.usableWidth * scale;
+  const shotHeight = reticlePacking.usableHeight * scale;
+  const radius = (waferDiameter / 2) * scale;
+  ctx.strokeStyle = "rgba(106, 219, 230, 0.28)";
+  ctx.lineWidth = 1;
+  for (let y = cy - radius; y <= cy + radius; y += shotHeight) {
+    for (let x = cx - radius; x <= cx + radius; x += shotWidth) {
+      const centerX = x + shotWidth / 2;
+      const centerY = y + shotHeight / 2;
+      if (Math.hypot(centerX - cx, centerY - cy) <= radius + Math.max(shotWidth, shotHeight) * 0.5) {
+        ctx.strokeRect(x, y, shotWidth, shotHeight);
+      }
+    }
+  }
 }
 
 function drawWaferMapLabel(ctx, { width, title, stats }) {
@@ -902,6 +1402,102 @@ function drawLegend(ctx, width, height) {
     ctx.fillText(label, x + 15, y + 10);
     x += Math.max(84, label.length * 8 + 28);
   });
+}
+
+function updateReticleReadout(packing) {
+  setText("reticleDieCount", `${formatNumber(packing.diePerReticle, 0)} (${packing.columns}x${packing.rows})`);
+  setText("reticleUtilization", `${formatNumber(packing.utilization * 100, 4)}%`);
+}
+
+function drawReticleResults(canvas, packing, { showBackground = true } = {}) {
+  if (!canvas) {
+    return;
+  }
+  const size = resizeCanvasToDisplay(canvas);
+  const ctx = canvas.getContext("2d");
+  const width = size.width;
+  const height = size.height;
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, width, height);
+
+  const margin = Math.max(22, Math.min(width, height) * 0.07);
+  const fieldRatio = packing.usableWidth / packing.usableHeight || 1;
+  let fieldH = height - margin * 2;
+  let fieldW = fieldH * fieldRatio;
+  if (fieldW > width - margin * 2) {
+    fieldW = width - margin * 2;
+    fieldH = fieldW / fieldRatio;
+  }
+  const fieldX = (width - fieldW) / 2;
+  const fieldY = (height - fieldH) / 2;
+  const scale = fieldW / packing.usableWidth;
+
+  drawReticleRegistrationMarks(ctx, fieldX, fieldY, fieldW, fieldH);
+
+  if (showBackground) {
+    const gradient = ctx.createLinearGradient(fieldX, fieldY, fieldX + fieldW, fieldY + fieldH);
+    gradient.addColorStop(0, "rgba(112, 177, 168, 0.94)");
+    gradient.addColorStop(0.52, "rgba(126, 148, 176, 0.9)");
+    gradient.addColorStop(1, "rgba(143, 111, 174, 0.92)");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(fieldX + packing.offsetX * scale, fieldY + packing.offsetY * scale, packing.occupiedWidth * scale, packing.occupiedHeight * scale);
+  }
+
+  ctx.strokeStyle = "#354aff";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(fieldX + packing.offsetX * scale, fieldY + packing.offsetY * scale, packing.occupiedWidth * scale, packing.occupiedHeight * scale);
+
+  for (let row = 0; row < packing.rows; row += 1) {
+    for (let col = 0; col < packing.columns; col += 1) {
+      const x = fieldX + (packing.offsetX + col * packing.pitchX) * scale;
+      const y = fieldY + (packing.offsetY + row * packing.pitchY) * scale;
+      const dieW = packing.dieWidth * scale;
+      const dieH = packing.dieHeight * scale;
+      if (!showBackground) {
+        ctx.fillStyle = col % 2 === 0 ? "rgba(112, 177, 168, 0.8)" : "rgba(143, 111, 174, 0.8)";
+        ctx.fillRect(x, y, dieW, dieH);
+      }
+      ctx.strokeStyle = "rgba(6, 8, 8, 0.86)";
+      ctx.lineWidth = Math.max(1, Math.min(3, scale * Math.max(packing.scribeX, packing.scribeY, 0.2)));
+      ctx.strokeRect(x, y, dieW, dieH);
+    }
+  }
+}
+
+function drawReticleRegistrationMarks(ctx, x, y, width, height) {
+  const pad = 12;
+  const len = Math.min(28, Math.max(16, Math.min(width, height) * 0.08));
+  ctx.strokeStyle = "rgba(226, 229, 232, 0.86)";
+  ctx.lineWidth = 2;
+  [
+    [x + pad, y + pad, 1, 1],
+    [x + width - pad, y + pad, -1, 1],
+    [x + pad, y + height - pad, 1, -1],
+    [x + width - pad, y + height - pad, -1, -1],
+  ].forEach(([cx, cy, sx, sy]) => {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy + sy * len);
+    ctx.lineTo(cx, cy);
+    ctx.lineTo(cx + sx * len, cy);
+    ctx.stroke();
+  });
+
+  ctx.fillStyle = "rgba(226, 229, 232, 0.88)";
+  [
+    [x + width / 2, y + pad],
+    [x + width - pad, y + height / 2],
+    [x + width / 2, y + height - pad],
+    [x + pad, y + height / 2],
+  ].forEach(([mx, my]) => {
+    ctx.fillRect(mx - 4, my - 4, 8, 8);
+  });
+}
+
+function setText(id, value) {
+  if (els[id]) {
+    els[id].textContent = value;
+  }
 }
 
 function drawWrappedText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
@@ -1311,7 +1907,8 @@ function roundRect(ctx, x, y, width, height, radius) {
 function resizeCanvasToDisplay(canvas) {
   const container = canvas.parentElement;
   const availableWidth = Math.max(0, Math.floor(container.clientWidth - 20));
-  const targetWidth = clamp(availableWidth, 240, 1100);
+  const maxWidth = Math.max(320, Number(canvas.getAttribute("width")) || 1100);
+  const targetWidth = clamp(availableWidth, 240, maxWidth);
   const targetHeight = Math.round(targetWidth * (targetWidth < 520 ? 0.9 : 0.66));
   const dpr = window.devicePixelRatio || 1;
   canvas.style.width = `${targetWidth}px`;
@@ -1335,5 +1932,14 @@ function debounce(fn, wait) {
   return (...args) => {
     window.clearTimeout(timer);
     timer = window.setTimeout(() => fn(...args), wait);
+  };
+}
+
+if (typeof window !== "undefined") {
+  window.InsightsLakeYield = {
+    calculateYield,
+    calculateLogicFoldingYield,
+    calculateReticlePacking,
+    generateSubstrateDies,
   };
 }

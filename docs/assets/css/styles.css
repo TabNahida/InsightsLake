@@ -644,6 +644,33 @@ td {
   grid-column: 1 / -1;
 }
 
+.form-section {
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(143, 171, 158, 0.18);
+  color: var(--text);
+}
+
+.form-section:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+}
+
+.check-row input {
+  width: 17px;
+  min-height: 17px;
+  accent-color: var(--amber);
+}
+
 .result-panel {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -708,11 +735,121 @@ td {
   min-height: 520px;
 }
 
-#waferCutCanvas {
+#waferCutCanvas,
+#logicWaferStackCanvas,
+#standardReticleCanvas,
+#logicReticleCanvas {
   display: block;
   max-width: 100%;
   height: auto;
   margin: 0 auto;
+}
+
+.logicfolding-band {
+  padding-top: 32px;
+}
+
+.logicfolding-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.48fr) minmax(620px, 1.52fr);
+  gap: 14px;
+  align-items: start;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.logicfolding-panel {
+  position: sticky;
+  top: 92px;
+  max-height: calc(100vh - 110px);
+  overflow: auto;
+  scrollbar-width: thin;
+}
+
+.logicfolding-results {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.wafer-stack-wrap {
+  min-height: 660px;
+}
+
+.layer-controls,
+.bonding-controls {
+  display: grid;
+  gap: 10px;
+}
+
+.layer-card,
+.bond-card {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(143, 171, 158, 0.2);
+  border-radius: 8px;
+  background: rgba(7, 10, 9, 0.34);
+}
+
+.layer-card {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.layer-card strong {
+  color: var(--green);
+}
+
+.reticle-results {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding-top: 20px;
+  border-top: 1px solid rgba(143, 171, 158, 0.22);
+}
+
+.reticle-canvas-wrap {
+  overflow: hidden;
+  min-height: 420px;
+  padding: 10px;
+  border: 1px solid rgba(143, 171, 158, 0.2);
+  border-radius: 8px;
+  background: #000;
+}
+
+.reticle-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.reticle-metrics article {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(18, 24, 22, 0.82);
+}
+
+.reticle-metrics strong {
+  display: block;
+  color: var(--amber);
+  font-family: "Segoe UI Mono", Consolas, monospace;
+  font-size: 1.25rem;
+}
+
+.reticle-section {
+  padding-top: 0;
+  padding-bottom: 72px;
+}
+
+.standalone-reticle {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-strong);
+  box-shadow: var(--shadow);
 }
 
 .reports-band {
@@ -822,12 +959,18 @@ td {
 @media (max-width: 1080px) {
   .overview-layout,
   .ranking-layout,
-  .tool-grid {
+  .tool-grid,
+  .logicfolding-grid {
     grid-template-columns: 1fr;
   }
 
   .overview-layout {
     min-height: auto;
+  }
+
+  .logicfolding-panel {
+    position: static;
+    max-height: none;
   }
 
   h1 {
@@ -939,6 +1082,8 @@ td {
   .tool-panel,
   .result-panel,
   .yield-results,
+  .logicfolding-results,
+  .reticle-metrics,
   .report-grid {
     grid-template-columns: 1fr;
   }
@@ -957,6 +1102,14 @@ td {
 
   .wafer-map-wrap {
     min-height: 320px;
+  }
+
+  .wafer-stack-wrap {
+    min-height: 420px;
+  }
+
+  .reticle-canvas-wrap {
+    min-height: 300px;
   }
 
   .rank-row {
@@ -998,6 +1151,7 @@ td {
   .page-hero,
   .ranking-layout,
   .tool-grid,
+  .logicfolding-grid,
   .report-grid {
     width: min(100%, 358px);
     max-width: 358px;

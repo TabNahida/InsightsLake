@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Yield Analyzer | InsightsLake</title>
-    <meta name="description" content="Wafer yield calculator and wafer cut map visualization." />
+    <title>LogicFolding Yield | InsightsLake</title>
+    <meta name="description" content="Multi-layer LogicFolding yield calculator with wafer stack and reticle visualization." />
     <link rel="stylesheet" href="assets/css/styles.css" />
   </head>
   <body data-page="yield">
@@ -33,26 +33,29 @@
 
     <main>
       <section class="page-hero">
-        <p class="eyebrow" data-i18n="yield.eyebrow">YIELD ANALYZER</p>
-        <h1 data-i18n="yield.title">Model die yield and wafer output</h1>
-        <p class="lead" data-i18n="yield.lead">
-          Compare common yield models and inspect a wafer cut map that shows gross dies, good dies, and defect losses.
+        <p class="eyebrow">LOGICFOLDING YIELD</p>
+        <h1>Model multi-layer bonded wafer yield</h1>
+        <p class="lead">
+          Calculate stacked-die yield from independent layer D0 and alpha values plus per-interface bonding yield.
         </p>
         <div class="report-actions">
-          <a id="logicFoldingCta" class="command primary" href="logicfolding-yield.html">Open LogicFolding yield calculator</a>
+          <a class="command" href="yield.html">Back to standard yield</a>
         </div>
       </section>
 
-      <section class="tool-band page-section">
-        <div class="tool-grid yield-grid">
-          <form id="yieldForm" class="tool-panel">
+      <section class="tool-band page-section logicfolding-band">
+        <div class="logicfolding-grid">
+          <form id="logicFoldingForm" class="tool-panel logicfolding-panel">
+            <div class="form-section wide">
+              <strong>Die Size</strong>
+            </div>
             <label>
-              <span data-i18n="yield.dieWidth">Die width mm</span>
+              <span>Die width mm</span>
               <input id="dieWidth" type="number" min="1" step="0.1" value="10" />
             </label>
             <label>
-              <span data-i18n="yield.dieHeight">Die height mm</span>
-              <input id="dieHeight" type="number" min="1" step="0.1" value="10" />
+              <span>Die height mm</span>
+              <input id="dieHeight" type="number" min="1" step="0.1" value="8" />
             </label>
             <label>
               <span>Scribe lane X mm</span>
@@ -62,28 +65,20 @@
               <span>Scribe lane Y mm</span>
               <input id="scribeY" type="number" min="0" step="0.01" value="0.2" />
             </label>
-            <label>
-              <span>Defect density /cm2</span>
-              <input id="defectDensity" type="number" min="0" step="0.01" value="0.2" />
-            </label>
-            <label>
-              <span>Yield model</span>
-              <select id="yieldModel">
-                <option value="poisson">Poisson</option>
-                <option value="murphy">Murphy</option>
-                <option value="negative">Negative binomial</option>
-              </select>
-            </label>
-            <label>
-              <span data-i18n="yield.alpha">Clustering alpha</span>
-              <input id="clusterAlpha" type="number" min="0.1" step="0.1" value="3" />
-            </label>
+
+            <div class="form-section wide">
+              <strong>Substrate</strong>
+            </div>
             <label>
               <span>Wafer diameter mm</span>
               <select id="waferDiameter">
                 <option value="300">300</option>
                 <option value="200">200</option>
               </select>
+            </label>
+            <label>
+              <span>Substrate cost $</span>
+              <input id="substrateCost" type="number" min="0" step="100" value="20000" />
             </label>
             <label>
               <span>Edge loss mm</span>
@@ -93,14 +88,7 @@
               <span>Notch keep-out mm</span>
               <input id="notchKeepOut" type="number" min="0" step="0.1" value="5" />
             </label>
-            <label>
-              <span>Substrate cost $</span>
-              <input id="substrateCost" type="number" min="0" step="100" value="20000" />
-            </label>
-            <label>
-              <span data-i18n="yield.wafersPerMonth">Wafers per month</span>
-              <input id="wafersPerMonth" type="number" min="0" step="100" value="10000" />
-            </label>
+
             <div class="form-section wide">
               <strong>Reticle</strong>
             </div>
@@ -136,43 +124,43 @@
               <input id="showReticleBackground" type="checkbox" checked />
               <span>Show illustrative background</span>
             </label>
+
+            <div class="form-section wide">
+              <strong>Layer Stack</strong>
+            </div>
+            <label class="wide">
+              <span>Layer count</span>
+              <input id="layerCount" type="number" min="2" step="1" value="4" />
+            </label>
+            <div id="logicLayerControls" class="layer-controls wide"></div>
+            <div id="bondingControls" class="bonding-controls wide"></div>
           </form>
 
-          <div class="result-panel yield-results">
+          <section class="result-panel yield-results logicfolding-results">
             <article>
-              <small>Die yield</small>
-              <strong id="yieldPercent">--</strong>
+              <small>Stack yield</small>
+              <strong id="stackYieldPercent">--</strong>
               <span>%</span>
             </article>
             <article>
-              <small>Gross die / wafer</small>
-              <strong id="grossDie">--</strong>
-              <span>die</span>
+              <small>Good stacks / wafer</small>
+              <strong id="stackGoodDie">--</strong>
+              <span>stacks</span>
             </article>
             <article>
-              <small>Good die / wafer</small>
-              <strong id="goodDie">--</strong>
-              <span>die</span>
+              <small>Bonding yield product</small>
+              <strong id="stackBondingYield">--</strong>
+              <span>%</span>
             </article>
             <article>
-              <small>Good die / month</small>
-              <strong id="monthlyGoodDie">--</strong>
-              <span>die</span>
-            </article>
-            <article>
-              <small>Cost per good die</small>
-              <strong id="costPerGoodDie">--</strong>
+              <small>Cost per good stack</small>
+              <strong id="stackCostPerGoodDie">--</strong>
               <span>USD</span>
             </article>
             <article>
               <small>Full dies</small>
               <strong id="fullDieCount">--</strong>
-              <span>inside wafer</span>
-            </article>
-            <article>
-              <small>Defective dies</small>
-              <strong id="defectiveDieCount">--</strong>
-              <span>modeled</span>
+              <span>per layer</span>
             </article>
             <article>
               <small>Partial dies</small>
@@ -185,39 +173,32 @@
               <span>keep-out</span>
             </article>
             <article>
-              <small>Wafer area</small>
-              <strong id="waferArea">--</strong>
-              <span>substrate</span>
+              <small>Die per reticle</small>
+              <strong id="stackReticleDieCount">--</strong>
+              <span>grid</span>
             </article>
-            <article>
-              <small>Total die area</small>
-              <strong id="totalDieArea">--</strong>
-              <span>full dies</span>
-            </article>
-            <article>
-              <small>Waste area</small>
-              <strong id="wasteArea">--</strong>
-              <span>remaining</span>
-            </article>
-            <div class="wafer-map-wrap">
-              <canvas id="waferCutCanvas" width="1100" height="720" aria-label="Wafer cut map"></canvas>
+            <div class="wafer-map-wrap wafer-stack-wrap">
+              <canvas id="logicWaferStackCanvas" width="1320" height="820" aria-label="LogicFolding wafer stack"></canvas>
             </div>
-            <section class="reticle-results">
-              <h2>Reticle Results</h2>
-              <div class="reticle-canvas-wrap">
-                <canvas id="standardReticleCanvas" width="900" height="560" aria-label="Reticle physical packing"></canvas>
-              </div>
-              <div class="reticle-metrics">
-                <article>
-                  <small>Die per reticle</small>
-                  <strong id="reticleDieCount">--</strong>
-                </article>
-                <article>
-                  <small>Reticle utilization</small>
-                  <strong id="reticleUtilization">--</strong>
-                </article>
-              </div>
-            </section>
+          </section>
+        </div>
+      </section>
+
+      <section class="page-section reticle-section">
+        <div class="reticle-results standalone-reticle">
+          <h2>Reticle Results</h2>
+          <div class="reticle-canvas-wrap">
+            <canvas id="logicReticleCanvas" width="980" height="620" aria-label="LogicFolding reticle physical packing"></canvas>
+          </div>
+          <div class="reticle-metrics">
+            <article>
+              <small>Die per reticle</small>
+              <strong id="reticleDieCount">--</strong>
+            </article>
+            <article>
+              <small>Reticle utilization</small>
+              <strong id="reticleUtilization">--</strong>
+            </article>
           </div>
         </div>
       </section>
