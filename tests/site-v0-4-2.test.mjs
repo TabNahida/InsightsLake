@@ -65,7 +65,6 @@ test("yield helper API is exposed for calculation tests", async () => {
   assert.equal(typeof helpers.calculateReticleShotGrid, "function");
   assert.equal(typeof helpers.calculateReticleRenderLayout, "function");
   assert.equal(typeof helpers.calculateLogicFoldingStackLayout, "function");
-  assert.equal(typeof helpers.calculateLogicFoldingConnectionPairs, "function");
   assert.equal(typeof helpers.projectWaferPoint, "function");
 });
 
@@ -178,34 +177,27 @@ test("LogicFolding stack layout separates foreshortened flat wafer planes", asyn
   assert.doesNotMatch(appJs, /ctx\.transform\(1,\s*-0\.16,\s*-0\.3,\s*1,\s*0,\s*0\)/);
 });
 
-test("LogicFolding connection guides link matching wafer coordinates", async () => {
-  const helpers = await loadYieldHelpers();
-  const layout = helpers.calculateLogicFoldingStackLayout({
-    width: 1100,
-    height: 660,
-    waferDiameter: 300,
-    layerCount: 2,
-  });
-  const pairs = helpers.calculateLogicFoldingConnectionPairs(layout, {
-    fromCx: layout.startX,
-    fromCy: layout.baseY,
-    toCx: layout.startX + layout.spacing,
-    toCy: layout.baseY + layout.radius * 0.035,
-  });
-  assert.equal(pairs.length, 3);
-  pairs.forEach((pair) => {
-    assert.ok(pair.from.localX > 0);
-    assert.ok(pair.to.localX < 0);
-    assert.equal(Number(Math.abs(pair.from.localX).toFixed(6)), Number(Math.abs(pair.to.localX).toFixed(6)));
-    assert.equal(Number(pair.from.localY.toFixed(6)), Number(pair.to.localY.toFixed(6)));
-    assert.ok(Math.abs(Math.hypot(pair.from.localX, pair.from.localY) - layout.radius) < 1e-6);
-    assert.ok(Math.abs(Math.hypot(pair.to.localX, pair.to.localY) - layout.radius) < 1e-6);
-  });
+test("LogicFolding stack no longer renders dashed inter-layer guide lines", () => {
+  assert.doesNotMatch(appJs, /function calculateLogicFoldingConnectionPairs/);
+  assert.doesNotMatch(appJs, /calculateLogicFoldingConnectionPairs\(/);
+  assert.doesNotMatch(appJs, /ctx\.setLineDash\(\[8, 10\]\)/);
 });
 
 test("LogicFolding projected die grid uses a stronger divider stroke", () => {
   assert.match(appJs, /const LOGICFOLDING_DIE_STROKE = "rgba\(2, 8, 6, 0\.92\)"/);
   assert.match(appJs, /const LOGICFOLDING_DIE_STROKE_WIDTH = 1\.05/);
+});
+
+test("LogicFolding layer brightness stays constant across deep stacks", () => {
+  assert.match(appJs, /const LOGICFOLDING_LAYER_ALPHA = 0\.78/);
+  assert.match(appJs, /const LOGICFOLDING_LABEL_FILL = "rgba\(237, 246, 240, 0\.8\)"/);
+  assert.doesNotMatch(appJs, /globalAlpha = clamp\(0\.78 - layer/);
+  assert.doesNotMatch(appJs, /0\.8 - layer \* 0\.08/);
+});
+
+test("LogicFolding wafer rendering does not cut a notch out of the projected wafer", () => {
+  assert.doesNotMatch(appJs, /const notch = \[/);
+  assert.doesNotMatch(appJs, /radius \* 0\.91/);
 });
 
 test("LogicFolding projection rotates the wafer plane around the screen y axis", async () => {

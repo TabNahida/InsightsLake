@@ -16,6 +16,8 @@ const DATA_URL = SITE_CONFIG.dataUrl;
 const ALL_VALUE = "__all";
 const LOGICFOLDING_DIE_STROKE = "rgba(2, 8, 6, 0.92)";
 const LOGICFOLDING_DIE_STROKE_WIDTH = 1.05;
+const LOGICFOLDING_LAYER_ALPHA = 0.78;
+const LOGICFOLDING_LABEL_FILL = "rgba(237, 246, 240, 0.8)";
 
 const I18N = {
   en: {
@@ -1015,27 +1017,6 @@ function calculateLogicFoldingStackLayout({ width, height, waferDiameter, layerC
   };
 }
 
-function calculateLogicFoldingConnectionPairs(layout, { fromCx, fromCy, toCx, toCy }) {
-  const direction = toCx >= fromCx ? 1 : -1;
-  const localPoints = [-0.54, 0, 0.54].map((yRatio) => {
-    const y = layout.radius * yRatio;
-    const edgeX = Math.sqrt(Math.max(0, layout.radius * layout.radius - y * y));
-    return {
-      fromX: edgeX * direction,
-      toX: -edgeX * direction,
-      y,
-    };
-  });
-  return localPoints.map(({ fromX, toX, y }) => {
-    const from = projectWaferPoint(fromX, y, layout);
-    const to = projectWaferPoint(toX, y, layout);
-    return {
-      from: { x: fromCx + from.x, y: fromCy + from.y, localX: fromX, localY: y },
-      to: { x: toCx + to.x, y: toCy + to.y, localX: toX, localY: y },
-    };
-  });
-}
-
 function projectWaferPoint(x, y, layout) {
   const tilt = layout.outOfPlaneTiltRadians || 0;
   const distance = Math.max(1, layout.perspectiveDistance || layout.radius * 4);
@@ -1327,37 +1308,19 @@ function drawLogicFoldingWaferStack({ canvas, dieWidth, dieHeight, dieArea, wafe
   });
   const { layers, radius, spacing, startX, baseY, scale } = layout;
 
-  ctx.save();
-  ctx.setLineDash([8, 10]);
-  ctx.strokeStyle = "rgba(197, 214, 205, 0.34)";
-  ctx.lineWidth = 1.2;
-  for (let layer = 0; layer < layers - 1; layer += 1) {
-    const x1 = startX + layer * spacing;
-    const y1 = baseY + layer * radius * 0.035;
-    const x2 = startX + (layer + 1) * spacing;
-    const y2 = baseY + (layer + 1) * radius * 0.035;
-    calculateLogicFoldingConnectionPairs(layout, { fromCx: x1, fromCy: y1, toCx: x2, toCy: y2 }).forEach(({ from, to }) => {
-      ctx.beginPath();
-      ctx.moveTo(from.x, from.y);
-      ctx.lineTo(to.x, to.y);
-      ctx.stroke();
-    });
-  }
-  ctx.restore();
-
   for (let layer = 0; layer < layers; layer += 1) {
     const cx = startX + layer * spacing;
     const cy = baseY + layer * radius * 0.035;
     const good = Math.round(substrate.fullDies.length * (layerYields[layer] || 1));
     ctx.save();
-    ctx.globalAlpha = clamp(0.78 - layer * 0.085, 0.34, 0.78);
+    ctx.globalAlpha = LOGICFOLDING_LAYER_ALPHA;
     drawLayerWafer(ctx, { cx, cy, radius, scale, waferDiameter, substrate, good, seedOffset: layer * 997, projection: layout });
     ctx.restore();
     if (showReticleGrid && reticlePacking?.diePerReticle) {
       drawReticleShotGrid(ctx, { cx, cy, scale, waferDiameter, reticlePacking, projection: layout });
     }
 
-    ctx.fillStyle = `rgba(237, 246, 240, ${clamp(0.8 - layer * 0.08, 0.45, 0.8)})`;
+    ctx.fillStyle = LOGICFOLDING_LABEL_FILL;
     ctx.font = "700 12px Segoe UI";
     ctx.fillText(
       `L${layer + 1} ${formatNumber((layerYields[layer] || 0) * 100, 1)}%`,
@@ -1430,21 +1393,6 @@ function drawLayerWafer(ctx, { cx, cy, radius, scale, substrate, good, seedOffse
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
   }
-  ctx.stroke();
-  ctx.fillStyle = "#050606";
-  const notch = [
-    [-radius * 0.045, radius * 0.985],
-    [0, radius * 0.91],
-    [radius * 0.045, radius * 0.985],
-  ].map(([x, y]) => (projection ? projectWaferPoint(x, y, projection) : { x: cx + x, y: cy + y }));
-  ctx.beginPath();
-  ctx.moveTo(notch[0].x, notch[0].y);
-  ctx.lineTo(notch[1].x, notch[1].y);
-  ctx.lineTo(notch[2].x, notch[2].y);
-  ctx.closePath();
-  ctx.fill();
-  ctx.strokeStyle = "rgba(255, 189, 84, 0.82)";
-  ctx.lineWidth = 1.5;
   ctx.stroke();
   ctx.restore();
 }
@@ -2290,7 +2238,6 @@ if (typeof window !== "undefined") {
     calculateReticleShotGrid,
     calculateReticleRenderLayout,
     calculateLogicFoldingStackLayout,
-    calculateLogicFoldingConnectionPairs,
     projectWaferPoint,
     generateSubstrateDies,
   };
