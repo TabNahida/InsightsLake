@@ -65,6 +65,7 @@ test("yield helper API is exposed for calculation tests", async () => {
   assert.equal(typeof helpers.calculateReticleShotGrid, "function");
   assert.equal(typeof helpers.calculateReticleRenderLayout, "function");
   assert.equal(typeof helpers.calculateLogicFoldingStackLayout, "function");
+  assert.equal(typeof helpers.calculateLogicFoldingConnectionPairs, "function");
   assert.equal(typeof helpers.projectWaferPoint, "function");
 });
 
@@ -170,12 +171,14 @@ test("LogicFolding stack layout separates foreshortened flat wafer planes", asyn
   });
   assert.equal(layout.layers, 2);
   assert.ok(layout.spacing > layout.radius * 2.25);
-  assert.ok(layout.outOfPlaneTiltRadians > 0.9 && layout.outOfPlaneTiltRadians < 1.25);
+  assert.ok(layout.outOfPlaneTiltRadians > 0.48 && layout.outOfPlaneTiltRadians < 0.68);
   assert.ok(layout.perspectiveDistance > layout.radius * 2);
+  assert.ok(layout.infoBandY > layout.layerLabelBaselineY + 4);
+  assert.equal(layout.rotationAxis, "y");
   assert.doesNotMatch(appJs, /ctx\.transform\(1,\s*-0\.16,\s*-0\.3,\s*1,\s*0,\s*0\)/);
 });
 
-test("LogicFolding projection makes the near side larger than the far side", async () => {
+test("LogicFolding connection guides link matching wafer coordinates", async () => {
   const helpers = await loadYieldHelpers();
   const layout = helpers.calculateLogicFoldingStackLayout({
     width: 1100,
@@ -183,10 +186,44 @@ test("LogicFolding projection makes the near side larger than the far side", asy
     waferDiameter: 300,
     layerCount: 2,
   });
-  const near = helpers.projectWaferPoint(60, layout.radius * 0.72, layout);
-  const far = helpers.projectWaferPoint(60, -layout.radius * 0.72, layout);
+  const pairs = helpers.calculateLogicFoldingConnectionPairs(layout, {
+    fromCx: layout.startX,
+    fromCy: layout.baseY,
+    toCx: layout.startX + layout.spacing,
+    toCy: layout.baseY + layout.radius * 0.035,
+  });
+  assert.equal(pairs.length, 3);
+  pairs.forEach((pair) => {
+    assert.ok(pair.from.localX > 0);
+    assert.ok(pair.to.localX < 0);
+    assert.equal(Number(Math.abs(pair.from.localX).toFixed(6)), Number(Math.abs(pair.to.localX).toFixed(6)));
+    assert.equal(Number(pair.from.localY.toFixed(6)), Number(pair.to.localY.toFixed(6)));
+    assert.ok(Math.abs(Math.hypot(pair.from.localX, pair.from.localY) - layout.radius) < 1e-6);
+    assert.ok(Math.abs(Math.hypot(pair.to.localX, pair.to.localY) - layout.radius) < 1e-6);
+  });
+});
+
+test("LogicFolding projected die grid uses a stronger divider stroke", () => {
+  assert.match(appJs, /const LOGICFOLDING_DIE_STROKE = "rgba\(2, 8, 6, 0\.92\)"/);
+  assert.match(appJs, /const LOGICFOLDING_DIE_STROKE_WIDTH = 1\.05/);
+});
+
+test("LogicFolding projection rotates the wafer plane around the screen y axis", async () => {
+  const helpers = await loadYieldHelpers();
+  const layout = helpers.calculateLogicFoldingStackLayout({
+    width: 1100,
+    height: 660,
+    waferDiameter: 300,
+    layerCount: 2,
+  });
+  const near = helpers.projectWaferPoint(layout.radius * 0.72, 60, layout);
+  const far = helpers.projectWaferPoint(-layout.radius * 0.72, 60, layout);
+  const sameDepthTop = helpers.projectWaferPoint(0, layout.radius * 0.72, layout);
+  const sameDepthBottom = helpers.projectWaferPoint(0, -layout.radius * 0.72, layout);
   assert.ok(near.depthScale > far.depthScale);
   assert.ok(Math.abs(near.y) > Math.abs(far.y));
+  assert.equal(Number(sameDepthTop.depthScale.toFixed(8)), Number(sameDepthBottom.depthScale.toFixed(8)));
+  assert.ok(Math.abs(near.x) < layout.radius * 0.72 * 1.2);
 });
 
 test("reticle-based substrate dies land inside matching shot fields", async () => {

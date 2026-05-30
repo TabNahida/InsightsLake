@@ -14,6 +14,8 @@ const SITE_CONFIG = Object.freeze({
 
 const DATA_URL = SITE_CONFIG.dataUrl;
 const ALL_VALUE = "__all";
+const LOGICFOLDING_DIE_STROKE = "rgba(2, 8, 6, 0.92)";
+const LOGICFOLDING_DIE_STROKE_WIDTH = 1.05;
 
 const I18N = {
   en: {
@@ -993,6 +995,9 @@ function calculateLogicFoldingStackLayout({ width, height, waferDiameter, layerC
   const layers = Math.max(2, Math.round(Number(layerCount) || 2));
   const radius = Math.max(44, Math.min(height * 0.42, width / (layers * 2.2 + 1.1)));
   const spacing = layers > 1 ? Math.min(radius * 2.4, Math.max(radius * 2.28, (width - radius * 2.3) / (layers - 1))) : 0;
+  const infoBandHeight = 54;
+  const infoBandY = Math.max(height - infoBandHeight - 16, height * 0.78);
+  const layerLabelBaselineY = infoBandY - 18;
   return {
     layers,
     radius,
@@ -1000,10 +1005,35 @@ function calculateLogicFoldingStackLayout({ width, height, waferDiameter, layerC
     startX: width * 0.5 - ((layers - 1) * spacing) / 2,
     baseY: height * 0.44,
     scale: radius / (waferDiameter / 2),
-    outOfPlaneTiltRadians: 1.04,
+    outOfPlaneTiltRadians: 0.58,
     perspectiveDistance: radius * 4.4,
+    rotationAxis: "y",
     rollRadians: 0,
+    infoBandY,
+    infoBandHeight,
+    layerLabelBaselineY,
   };
+}
+
+function calculateLogicFoldingConnectionPairs(layout, { fromCx, fromCy, toCx, toCy }) {
+  const direction = toCx >= fromCx ? 1 : -1;
+  const localPoints = [-0.54, 0, 0.54].map((yRatio) => {
+    const y = layout.radius * yRatio;
+    const edgeX = Math.sqrt(Math.max(0, layout.radius * layout.radius - y * y));
+    return {
+      fromX: edgeX * direction,
+      toX: -edgeX * direction,
+      y,
+    };
+  });
+  return localPoints.map(({ fromX, toX, y }) => {
+    const from = projectWaferPoint(fromX, y, layout);
+    const to = projectWaferPoint(toX, y, layout);
+    return {
+      from: { x: fromCx + from.x, y: fromCy + from.y, localX: fromX, localY: y },
+      to: { x: toCx + to.x, y: toCy + to.y, localX: toX, localY: y },
+    };
+  });
 }
 
 function projectWaferPoint(x, y, layout) {
@@ -1011,10 +1041,10 @@ function projectWaferPoint(x, y, layout) {
   const distance = Math.max(1, layout.perspectiveDistance || layout.radius * 4);
   const cosTilt = Math.cos(tilt);
   const sinTilt = Math.sin(tilt);
-  const depth = y * sinTilt;
+  const depth = x * sinTilt;
   const depthScale = distance / Math.max(1, distance - depth);
-  const projectedX = x * depthScale;
-  const projectedY = y * cosTilt * depthScale;
+  const projectedX = x * cosTilt * depthScale;
+  const projectedY = y * depthScale;
   const roll = layout.rollRadians || 0;
   if (!roll) {
     return { x: projectedX, y: projectedY, depthScale };
@@ -1306,20 +1336,12 @@ function drawLogicFoldingWaferStack({ canvas, dieWidth, dieHeight, dieArea, wafe
     const y1 = baseY + layer * radius * 0.035;
     const x2 = startX + (layer + 1) * spacing;
     const y2 = baseY + (layer + 1) * radius * 0.035;
-    const rightNear = projectWaferPoint(radius * 0.96, radius * 0.62, layout);
-    const rightCenter = projectWaferPoint(radius * 0.96, 0, layout);
-    const rightFar = projectWaferPoint(radius * 0.96, -radius * 0.62, layout);
-    const leftNear = projectWaferPoint(-radius * 0.96, radius * 0.62, layout);
-    const leftCenter = projectWaferPoint(-radius * 0.96, 0, layout);
-    const leftFar = projectWaferPoint(-radius * 0.96, -radius * 0.62, layout);
-    ctx.beginPath();
-    ctx.moveTo(x1 + rightFar.x, y1 + rightFar.y);
-    ctx.lineTo(x2 + leftFar.x, y2 + leftFar.y);
-    ctx.moveTo(x1 + rightCenter.x, y1 + rightCenter.y);
-    ctx.lineTo(x2 + leftCenter.x, y2 + leftCenter.y);
-    ctx.moveTo(x1 + rightNear.x, y1 + rightNear.y);
-    ctx.lineTo(x2 + leftNear.x, y2 + leftNear.y);
-    ctx.stroke();
+    calculateLogicFoldingConnectionPairs(layout, { fromCx: x1, fromCy: y1, toCx: x2, toCy: y2 }).forEach(({ from, to }) => {
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(to.x, to.y);
+      ctx.stroke();
+    });
   }
   ctx.restore();
 
@@ -1337,17 +1359,21 @@ function drawLogicFoldingWaferStack({ canvas, dieWidth, dieHeight, dieArea, wafe
 
     ctx.fillStyle = `rgba(237, 246, 240, ${clamp(0.8 - layer * 0.08, 0.45, 0.8)})`;
     ctx.font = "700 12px Segoe UI";
-    ctx.fillText(`L${layer + 1} ${formatNumber((layerYields[layer] || 0) * 100, 1)}%`, cx - radius * 0.42, height - 24 - (layers - layer - 1) * 16);
+    ctx.fillText(
+      `L${layer + 1} ${formatNumber((layerYields[layer] || 0) * 100, 1)}%`,
+      cx - radius * 0.42,
+      layout.layerLabelBaselineY - (layers - layer - 1) * 16,
+    );
   }
 
   ctx.fillStyle = "rgba(17, 22, 27, 0.86)";
-  ctx.fillRect(24, height - 102, width - 48, 64);
+  ctx.fillRect(24, layout.infoBandY, width - 48, layout.infoBandHeight);
   ctx.fillStyle = "rgba(197, 214, 205, 0.9)";
   ctx.font = "12px Segoe UI";
   ctx.fillText(
     `Shared die ${formatNumber(dieWidth, 1)} x ${formatNumber(dieHeight, 1)} mm | area ${formatNumber(dieArea, 1)} mm2 | layers ${layers}`,
     38,
-    height - 64,
+    layout.infoBandY + 34,
   );
 }
 
@@ -1561,7 +1587,17 @@ function drawLayerDieCell(ctx, cell, cx, cy, scale, fillStyle, projection) {
     drawWaferDieCell(ctx, cell, cx, cy, scale, fillStyle);
     return;
   }
-  drawProjectedRect(ctx, cell.x * scale, cell.y * scale, cell.width * scale, cell.height * scale, projection, fillStyle, "rgba(7, 10, 9, 0.75)");
+  drawProjectedRect(
+    ctx,
+    cell.x * scale,
+    cell.y * scale,
+    cell.width * scale,
+    cell.height * scale,
+    projection,
+    fillStyle,
+    LOGICFOLDING_DIE_STROKE,
+    LOGICFOLDING_DIE_STROKE_WIDTH,
+  );
 }
 
 function traceProjectedWaferPath(ctx, radius, projection) {
@@ -1579,7 +1615,7 @@ function traceProjectedWaferPath(ctx, radius, projection) {
   ctx.closePath();
 }
 
-function drawProjectedRect(ctx, x, y, width, height, projection, fillStyle = null, strokeStyle = null) {
+function drawProjectedRect(ctx, x, y, width, height, projection, fillStyle = null, strokeStyle = null, strokeWidth = 0.7) {
   const points = [
     projectWaferPoint(x, y, projection),
     projectWaferPoint(x + width, y, projection),
@@ -1596,7 +1632,7 @@ function drawProjectedRect(ctx, x, y, width, height, projection, fillStyle = nul
   }
   if (strokeStyle) {
     ctx.strokeStyle = strokeStyle;
-    ctx.lineWidth = 0.7;
+    ctx.lineWidth = strokeWidth;
     ctx.stroke();
   }
 }
@@ -2254,6 +2290,7 @@ if (typeof window !== "undefined") {
     calculateReticleShotGrid,
     calculateReticleRenderLayout,
     calculateLogicFoldingStackLayout,
+    calculateLogicFoldingConnectionPairs,
     projectWaferPoint,
     generateSubstrateDies,
   };
