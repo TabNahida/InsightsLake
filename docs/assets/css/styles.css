@@ -835,6 +835,7 @@ td {
   color: var(--amber);
   font-family: "Segoe UI Mono", Consolas, monospace;
   font-size: 1.25rem;
+  white-space: nowrap;
 }
 
 .reticle-section {

@@ -824,8 +824,8 @@ function renderYieldAnalyzer() {
   const wafersPerMonth = Math.max(0, toNumber(els.wafersPerMonth.value) || 0);
   const model = els.yieldModel.value;
   const dieYield = calculateYield(dieArea, defectDensity, model, alpha);
-  const substrate = generateSubstrateDies({ dieWidth, dieHeight, waferDiameter, edgeLoss, notchKeepOut });
   const reticle = readReticlePacking({ dieWidth, dieHeight, scribeX, scribeY });
+  const substrate = generateSubstrateDies({ dieWidth, dieHeight, waferDiameter, edgeLoss, notchKeepOut, reticlePacking: reticle });
   const gross = substrate.fullDies.length;
   const good = Math.round(gross * dieYield);
   const defective = Math.max(0, gross - good);
@@ -888,35 +888,143 @@ function calculateReticlePacking({ dieWidth, dieHeight, scribeX = 0, scribeY = 0
   const safeScribeY = Math.max(0, Number(scribeY) || 0);
   const usableWidth = Math.max(0, (Number(reticleWidth) || 26) * (halfField ? 0.5 : 1));
   const usableHeight = Math.max(0, Number(reticleHeight) || 33);
-  const pitchX = safeDieWidth + safeScribeX;
-  const pitchY = safeDieHeight + safeScribeY;
-  const columns = pitchX > 0 ? Math.max(0, Math.floor((usableWidth + safeScribeX) / pitchX)) : 0;
-  const rows = pitchY > 0 ? Math.max(0, Math.floor((usableHeight + safeScribeY) / pitchY)) : 0;
-  const diePerReticle = columns * rows;
-  const dieArea = safeDieWidth * safeDieHeight;
-  const fieldArea = usableWidth * usableHeight;
-  const utilization = fieldArea > 0 ? clamp((diePerReticle * dieArea) / fieldArea, 0, 1) : 0;
-  const occupiedWidth = columns > 0 ? columns * safeDieWidth + Math.max(0, columns - 1) * safeScribeX : 0;
-  const occupiedHeight = rows > 0 ? rows * safeDieHeight + Math.max(0, rows - 1) * safeScribeY : 0;
+  const buildCandidate = ({ layoutDieWidth, layoutDieHeight, layoutScribeX, layoutScribeY, rotated }) => {
+    const pitchX = layoutDieWidth + layoutScribeX;
+    const pitchY = layoutDieHeight + layoutScribeY;
+    const columns = pitchX > 0 ? Math.max(0, Math.floor((usableWidth + layoutScribeX) / pitchX)) : 0;
+    const rows = pitchY > 0 ? Math.max(0, Math.floor((usableHeight + layoutScribeY) / pitchY)) : 0;
+    const diePerReticle = columns * rows;
+    const dieArea = safeDieWidth * safeDieHeight;
+    const fieldArea = usableWidth * usableHeight;
+    const utilization = fieldArea > 0 ? clamp((diePerReticle * dieArea) / fieldArea, 0, 1) : 0;
+    const occupiedWidth = columns > 0 ? columns * layoutDieWidth + Math.max(0, columns - 1) * layoutScribeX : 0;
+    const occupiedHeight = rows > 0 ? rows * layoutDieHeight + Math.max(0, rows - 1) * layoutScribeY : 0;
+    return {
+      dieWidth: layoutDieWidth,
+      dieHeight: layoutDieHeight,
+      scribeX: layoutScribeX,
+      scribeY: layoutScribeY,
+      pitchX,
+      pitchY,
+      columns,
+      rows,
+      diePerReticle,
+      utilization,
+      occupiedWidth,
+      occupiedHeight,
+      offsetX: Math.max(0, (usableWidth - occupiedWidth) / 2),
+      offsetY: Math.max(0, (usableHeight - occupiedHeight) / 2),
+      rotated,
+    };
+  };
+  const normal = buildCandidate({
+    layoutDieWidth: safeDieWidth,
+    layoutDieHeight: safeDieHeight,
+    layoutScribeX: safeScribeX,
+    layoutScribeY: safeScribeY,
+    rotated: false,
+  });
+  const rotated = buildCandidate({
+    layoutDieWidth: safeDieHeight,
+    layoutDieHeight: safeDieWidth,
+    layoutScribeX: safeScribeY,
+    layoutScribeY: safeScribeX,
+    rotated: true,
+  });
+  const best =
+    rotated.diePerReticle > normal.diePerReticle || (rotated.diePerReticle === normal.diePerReticle && rotated.utilization > normal.utilization)
+      ? rotated
+      : normal;
+
   return {
     reticleWidth: Number(reticleWidth) || 26,
     reticleHeight: Number(reticleHeight) || 33,
     usableWidth,
     usableHeight,
-    dieWidth: safeDieWidth,
-    dieHeight: safeDieHeight,
-    scribeX: safeScribeX,
-    scribeY: safeScribeY,
-    pitchX,
-    pitchY,
-    columns,
-    rows,
-    diePerReticle,
-    utilization,
-    occupiedWidth,
-    occupiedHeight,
-    offsetX: Math.max(0, (usableWidth - occupiedWidth) / 2),
-    offsetY: Math.max(0, (usableHeight - occupiedHeight) / 2),
+    inputDieWidth: safeDieWidth,
+    inputDieHeight: safeDieHeight,
+    inputScribeX: safeScribeX,
+    inputScribeY: safeScribeY,
+    ...best,
+  };
+}
+
+function calculateReticleShotGrid({ waferDiameter, reticlePacking }) {
+  const radius = waferDiameter / 2;
+  if (!reticlePacking?.diePerReticle) {
+    return { originX: 0, originY: 0, rects: [] };
+  }
+  const fieldWidth = reticlePacking.columns * reticlePacking.pitchX;
+  const fieldHeight = reticlePacking.rows * reticlePacking.pitchY;
+  if (fieldWidth <= 0 || fieldHeight <= 0) {
+    return { originX: 0, originY: 0, rects: [] };
+  }
+  const originX = -reticlePacking.dieWidth / 2;
+  const originY = -reticlePacking.dieHeight / 2;
+  const minCol = Math.floor((-radius - originX) / fieldWidth) - 1;
+  const maxCol = Math.ceil((radius - originX) / fieldWidth) + 1;
+  const minRow = Math.floor((-radius - originY) / fieldHeight) - 1;
+  const maxRow = Math.ceil((radius - originY) / fieldHeight) + 1;
+  const rects = [];
+
+  for (let row = minRow; row <= maxRow; row += 1) {
+    for (let col = minCol; col <= maxCol; col += 1) {
+      const x = originX + col * fieldWidth;
+      const y = originY + row * fieldHeight;
+      if (rectIntersectsCircle(x, y, fieldWidth, fieldHeight, radius)) {
+        rects.push({
+          x,
+          y,
+          width: fieldWidth,
+          height: fieldHeight,
+          reticleX: x - reticlePacking.offsetX,
+          reticleY: y - reticlePacking.offsetY,
+          row,
+          col,
+        });
+      }
+    }
+  }
+
+  return { originX, originY, rects };
+}
+
+function calculateLogicFoldingStackLayout({ width, height, waferDiameter, layerCount }) {
+  const layers = Math.max(2, Math.round(Number(layerCount) || 2));
+  const radius = Math.max(44, Math.min(height * 0.42, width / (layers * 2.2 + 1.1)));
+  const spacing = layers > 1 ? Math.min(radius * 2.4, Math.max(radius * 2.28, (width - radius * 2.3) / (layers - 1))) : 0;
+  return {
+    layers,
+    radius,
+    spacing,
+    startX: width * 0.5 - ((layers - 1) * spacing) / 2,
+    baseY: height * 0.44,
+    scale: radius / (waferDiameter / 2),
+    outOfPlaneTiltRadians: 1.04,
+    perspectiveDistance: radius * 4.4,
+    rollRadians: 0,
+  };
+}
+
+function projectWaferPoint(x, y, layout) {
+  const tilt = layout.outOfPlaneTiltRadians || 0;
+  const distance = Math.max(1, layout.perspectiveDistance || layout.radius * 4);
+  const cosTilt = Math.cos(tilt);
+  const sinTilt = Math.sin(tilt);
+  const depth = y * sinTilt;
+  const depthScale = distance / Math.max(1, distance - depth);
+  const projectedX = x * depthScale;
+  const projectedY = y * cosTilt * depthScale;
+  const roll = layout.rollRadians || 0;
+  if (!roll) {
+    return { x: projectedX, y: projectedY, depthScale };
+  }
+  const cosRoll = Math.cos(roll);
+  const sinRoll = Math.sin(roll);
+  return {
+    x: projectedX * cosRoll - projectedY * sinRoll,
+    y: projectedX * sinRoll + projectedY * cosRoll,
+    depthScale,
   };
 }
 
@@ -945,52 +1053,91 @@ function readReticlePacking({ dieWidth, dieHeight, scribeX, scribeY }) {
   return packing;
 }
 
-function generateSubstrateDies({ dieWidth, dieHeight, waferDiameter, edgeLoss = 0, notchKeepOut = 0 }) {
+function generateSubstrateDies({ dieWidth, dieHeight, waferDiameter, edgeLoss = 0, notchKeepOut = 0, reticlePacking = null }) {
   const waferRadius = waferDiameter / 2;
   const usableRadius = Math.max(0, waferRadius - edgeLoss);
-  const columns = Math.ceil(waferDiameter / dieWidth) + 2;
-  const rows = Math.ceil(waferDiameter / dieHeight) + 2;
   const fullDies = [];
   const partialDies = [];
   const excludedDies = [];
   const seed = Math.round(dieWidth * 37 + dieHeight * 71 + waferDiameter + edgeLoss * 11 + notchKeepOut * 19);
+  const seen = new Set();
 
+  const classifyCell = (cell) => {
+    const key = `${cell.row}:${cell.col}:${cell.x.toFixed(4)}:${cell.y.toFixed(4)}`;
+    if (seen.has(key)) {
+      return;
+    }
+    seen.add(key);
+    const cellWidth = cell.width || dieWidth;
+    const cellHeight = cell.height || dieHeight;
+    const centerX = cell.x + cellWidth / 2;
+    const centerY = cell.y + cellHeight / 2;
+    const corners = dieCorners(cell.x, cell.y, cellWidth, cellHeight);
+    const centerInsideWafer = Math.hypot(centerX, centerY) <= waferRadius;
+    const anyCornerInsideWafer = corners.some(([px, py]) => Math.hypot(px, py) <= waferRadius);
+    if (!centerInsideWafer && !anyCornerInsideWafer) {
+      return;
+    }
+    if (corners.some(([px, py]) => Math.hypot(px, py) > waferRadius)) {
+      partialDies.push(cell);
+      return;
+    }
+    const fullInsideUsable = corners.every(([px, py]) => Math.hypot(px, py) <= usableRadius);
+    const notchExcluded = isInsideNotchKeepOut(centerX, centerY, waferRadius, notchKeepOut);
+    if (fullInsideUsable && !notchExcluded) {
+      fullDies.push(cell);
+    } else {
+      excludedDies.push(cell);
+    }
+  };
+
+  if (reticlePacking?.diePerReticle) {
+    calculateReticleShotGrid({ waferDiameter, reticlePacking }).rects.forEach((shot) => {
+      for (let localRow = 0; localRow < reticlePacking.rows; localRow += 1) {
+        for (let localCol = 0; localCol < reticlePacking.columns; localCol += 1) {
+          const row = shot.row * reticlePacking.rows + localRow;
+          const col = shot.col * reticlePacking.columns + localCol;
+          const x = shot.x + localCol * reticlePacking.pitchX;
+          const y = shot.y + localRow * reticlePacking.pitchY;
+          classifyCell({
+            x,
+            y,
+            width: reticlePacking.dieWidth,
+            height: reticlePacking.dieHeight,
+            row,
+            col,
+            shot,
+            noise: deterministicNoise(row, col, seed),
+          });
+        }
+      }
+    });
+    return { fullDies, partialDies, excludedDies };
+  }
+
+  const columns = Math.ceil(waferDiameter / dieWidth) + 2;
+  const rows = Math.ceil(waferDiameter / dieHeight) + 2;
   for (let row = -rows; row <= rows; row += 1) {
     for (let col = -columns; col <= columns; col += 1) {
-      const centerX = col * dieWidth;
-      const centerY = row * dieHeight;
-      const x = centerX - dieWidth / 2;
-      const y = centerY - dieHeight / 2;
-      const cell = {
-        x,
-        y,
+      classifyCell({
+        x: col * dieWidth - dieWidth / 2,
+        y: row * dieHeight - dieHeight / 2,
         width: dieWidth,
         height: dieHeight,
         row,
         col,
         noise: deterministicNoise(row, col, seed),
-      };
-      const corners = dieCorners(x, y, dieWidth, dieHeight);
-      const centerInsideWafer = Math.hypot(centerX, centerY) <= waferRadius;
-      const anyCornerInsideWafer = corners.some(([px, py]) => Math.hypot(px, py) <= waferRadius);
-      if (!centerInsideWafer && !anyCornerInsideWafer) {
-        continue;
-      }
-      if (corners.some(([px, py]) => Math.hypot(px, py) > waferRadius)) {
-        partialDies.push(cell);
-        continue;
-      }
-      const fullInsideUsable = corners.every(([px, py]) => Math.hypot(px, py) <= usableRadius);
-      const notchExcluded = isInsideNotchKeepOut(centerX, centerY, waferRadius, notchKeepOut);
-      if (fullInsideUsable && !notchExcluded) {
-        fullDies.push(cell);
-      } else {
-        excludedDies.push(cell);
-      }
+      });
     }
   }
 
   return { fullDies, partialDies, excludedDies };
+}
+
+function rectIntersectsCircle(x, y, width, height, radius) {
+  const closestX = clamp(0, x, x + width);
+  const closestY = clamp(0, y, y + height);
+  return Math.hypot(closestX, closestY) <= radius;
 }
 
 function dieCorners(x, y, dieWidth, dieHeight) {
@@ -1094,8 +1241,8 @@ function renderLogicFoldingAnalyzer() {
   const edgeLoss = Math.max(0, toNumber(els.edgeLoss?.value) || 0);
   const notchKeepOut = Math.max(0, toNumber(els.notchKeepOut?.value) || 0);
   const substrateCost = Math.max(0, toNumber(els.substrateCost?.value) || 0);
-  const substrate = generateSubstrateDies({ dieWidth, dieHeight, waferDiameter, edgeLoss, notchKeepOut });
   const reticle = readReticlePacking({ dieWidth, dieHeight, scribeX, scribeY });
+  const substrate = generateSubstrateDies({ dieWidth, dieHeight, waferDiameter, edgeLoss, notchKeepOut, reticlePacking: reticle });
   const { layers, bondingYields } = readLogicFoldingInputs();
   const layerYields = layers.map((layer) =>
     calculateYield(dieArea, Math.max(0, toNumber(layer.defectDensity) || 0), layer.model, Math.max(0.1, toNumber(layer.alpha) || 3)),
@@ -1142,25 +1289,51 @@ function drawLogicFoldingWaferStack({ canvas, dieWidth, dieHeight, dieArea, wafe
   ctx.fillStyle = "#050606";
   ctx.fillRect(0, 0, width, height);
 
-  const layers = Math.max(2, layerYields.length);
-  const radius = Math.min(height * 0.34, width / (2.1 + layers * 0.32));
-  const spacing = Math.min(radius * 0.78, Math.max(58, (width - radius * 2.2) / Math.max(1, layers)));
-  const startX = width * 0.5 - ((layers - 1) * spacing) / 2 - radius * 0.18;
-  const baseY = height * 0.43;
-  const scale = radius / (waferDiameter / 2);
+  const layout = calculateLogicFoldingStackLayout({
+    width,
+    height,
+    waferDiameter,
+    layerCount: layerYields.length,
+  });
+  const { layers, radius, spacing, startX, baseY, scale } = layout;
+
+  ctx.save();
+  ctx.setLineDash([8, 10]);
+  ctx.strokeStyle = "rgba(197, 214, 205, 0.34)";
+  ctx.lineWidth = 1.2;
+  for (let layer = 0; layer < layers - 1; layer += 1) {
+    const x1 = startX + layer * spacing;
+    const y1 = baseY + layer * radius * 0.035;
+    const x2 = startX + (layer + 1) * spacing;
+    const y2 = baseY + (layer + 1) * radius * 0.035;
+    const rightNear = projectWaferPoint(radius * 0.96, radius * 0.62, layout);
+    const rightCenter = projectWaferPoint(radius * 0.96, 0, layout);
+    const rightFar = projectWaferPoint(radius * 0.96, -radius * 0.62, layout);
+    const leftNear = projectWaferPoint(-radius * 0.96, radius * 0.62, layout);
+    const leftCenter = projectWaferPoint(-radius * 0.96, 0, layout);
+    const leftFar = projectWaferPoint(-radius * 0.96, -radius * 0.62, layout);
+    ctx.beginPath();
+    ctx.moveTo(x1 + rightFar.x, y1 + rightFar.y);
+    ctx.lineTo(x2 + leftFar.x, y2 + leftFar.y);
+    ctx.moveTo(x1 + rightCenter.x, y1 + rightCenter.y);
+    ctx.lineTo(x2 + leftCenter.x, y2 + leftCenter.y);
+    ctx.moveTo(x1 + rightNear.x, y1 + rightNear.y);
+    ctx.lineTo(x2 + leftNear.x, y2 + leftNear.y);
+    ctx.stroke();
+  }
+  ctx.restore();
 
   for (let layer = 0; layer < layers; layer += 1) {
     const cx = startX + layer * spacing;
-    const cy = baseY + layer * radius * 0.055;
+    const cy = baseY + layer * radius * 0.035;
     const good = Math.round(substrate.fullDies.length * (layerYields[layer] || 1));
     ctx.save();
     ctx.globalAlpha = clamp(0.78 - layer * 0.085, 0.34, 0.78);
-    ctx.transform(1, -0.1, -0.18, 1, 0, 0);
-    drawLayerWafer(ctx, { cx, cy, radius, scale, waferDiameter, substrate, good, seedOffset: layer * 997 });
-    if (showReticleGrid && reticlePacking?.diePerReticle) {
-      drawReticleShotGrid(ctx, { cx, cy, scale, waferDiameter, reticlePacking });
-    }
+    drawLayerWafer(ctx, { cx, cy, radius, scale, waferDiameter, substrate, good, seedOffset: layer * 997, projection: layout });
     ctx.restore();
+    if (showReticleGrid && reticlePacking?.diePerReticle) {
+      drawReticleShotGrid(ctx, { cx, cy, scale, waferDiameter, reticlePacking, projection: layout });
+    }
 
     ctx.fillStyle = `rgba(237, 246, 240, ${clamp(0.8 - layer * 0.08, 0.45, 0.8)})`;
     ctx.font = "700 12px Segoe UI";
@@ -1178,13 +1351,32 @@ function drawLogicFoldingWaferStack({ canvas, dieWidth, dieHeight, dieArea, wafe
   );
 }
 
-function drawLayerWafer(ctx, { cx, cy, radius, scale, substrate, good, seedOffset }) {
+function drawLayerWafer(ctx, { cx, cy, radius, scale, substrate, good, seedOffset, projection = null }) {
   ctx.save();
-  ctx.beginPath();
-  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  if (projection) {
+    ctx.translate(cx, cy);
+    traceProjectedWaferPath(ctx, radius, projection);
+  } else {
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  }
   ctx.clip();
   ctx.fillStyle = "rgba(18, 38, 32, 0.84)";
-  ctx.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
+  if (projection) {
+    traceProjectedWaferPath(ctx, radius, projection);
+    ctx.fill();
+  } else {
+    ctx.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
+  }
+
+  const sampleCells = (cells, maxCells) =>
+    cells.length > maxCells ? cells.filter((_, index) => index % Math.ceil(cells.length / maxCells) === 0) : cells;
+  sampleCells(substrate.partialDies || [], 260).forEach((cell) => {
+    drawLayerDieCell(ctx, cell, cx, cy, scale, "rgba(255, 189, 84, 0.48)", projection);
+  });
+  sampleCells(substrate.excludedDies || [], 160).forEach((cell) => {
+    drawLayerDieCell(ctx, cell, cx, cy, scale, "rgba(84, 93, 99, 0.5)", projection);
+  });
 
   const fullDies = substrate.fullDies.length > 900 ? substrate.fullDies.filter((_, index) => index % Math.ceil(substrate.fullDies.length / 900) === 0) : substrate.fullDies;
   const badCount = Math.max(0, substrate.fullDies.length - good);
@@ -1196,14 +1388,39 @@ function drawLayerWafer(ctx, { cx, cy, radius, scale, substrate, good, seedOffse
   );
   fullDies.forEach((cell) => {
     const bad = badSet.has(`${cell.row}:${cell.col}`);
-    drawWaferDieCell(ctx, cell, cx, cy, scale, bad ? "rgba(255, 117, 104, 0.64)" : "rgba(49, 236, 88, 0.64)");
+    drawLayerDieCell(ctx, cell, cx, cy, scale, bad ? "rgba(255, 117, 104, 0.64)" : "rgba(49, 236, 88, 0.64)", projection);
   });
   ctx.restore();
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.72)";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+
+  ctx.save();
+  if (projection) {
+    ctx.translate(cx, cy);
+  }
+  ctx.strokeStyle = "rgba(255, 189, 84, 0.9)";
+  ctx.lineWidth = 3;
+  if (projection) {
+    traceProjectedWaferPath(ctx, radius, projection);
+  } else {
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  }
   ctx.stroke();
+  ctx.fillStyle = "#050606";
+  const notch = [
+    [-radius * 0.045, radius * 0.985],
+    [0, radius * 0.91],
+    [radius * 0.045, radius * 0.985],
+  ].map(([x, y]) => (projection ? projectWaferPoint(x, y, projection) : { x: cx + x, y: cy + y }));
+  ctx.beginPath();
+  ctx.moveTo(notch[0].x, notch[0].y);
+  ctx.lineTo(notch[1].x, notch[1].y);
+  ctx.lineTo(notch[2].x, notch[2].y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255, 189, 84, 0.82)";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.restore();
 }
 
 function generateWaferDies({ dieWidth, dieHeight, waferDiameter }) {
@@ -1339,21 +1556,66 @@ function drawWaferDieCell(ctx, cell, cx, cy, scale, fillStyle) {
   ctx.strokeRect(rectX + 0.7, rectY + 0.7, Math.max(0.8, rectW - 1.4), Math.max(0.8, rectH - 1.4));
 }
 
-function drawReticleShotGrid(ctx, { cx, cy, scale, waferDiameter, reticlePacking }) {
-  const shotWidth = reticlePacking.usableWidth * scale;
-  const shotHeight = reticlePacking.usableHeight * scale;
-  const radius = (waferDiameter / 2) * scale;
-  ctx.strokeStyle = "rgba(106, 219, 230, 0.28)";
-  ctx.lineWidth = 1;
-  for (let y = cy - radius; y <= cy + radius; y += shotHeight) {
-    for (let x = cx - radius; x <= cx + radius; x += shotWidth) {
-      const centerX = x + shotWidth / 2;
-      const centerY = y + shotHeight / 2;
-      if (Math.hypot(centerX - cx, centerY - cy) <= radius + Math.max(shotWidth, shotHeight) * 0.5) {
-        ctx.strokeRect(x, y, shotWidth, shotHeight);
-      }
+function drawLayerDieCell(ctx, cell, cx, cy, scale, fillStyle, projection) {
+  if (!projection) {
+    drawWaferDieCell(ctx, cell, cx, cy, scale, fillStyle);
+    return;
+  }
+  drawProjectedRect(ctx, cell.x * scale, cell.y * scale, cell.width * scale, cell.height * scale, projection, fillStyle, "rgba(7, 10, 9, 0.75)");
+}
+
+function traceProjectedWaferPath(ctx, radius, projection) {
+  ctx.beginPath();
+  const steps = 128;
+  for (let index = 0; index <= steps; index += 1) {
+    const angle = (Math.PI * 2 * index) / steps;
+    const point = projectWaferPoint(Math.cos(angle) * radius, Math.sin(angle) * radius, projection);
+    if (index === 0) {
+      ctx.moveTo(point.x, point.y);
+    } else {
+      ctx.lineTo(point.x, point.y);
     }
   }
+  ctx.closePath();
+}
+
+function drawProjectedRect(ctx, x, y, width, height, projection, fillStyle = null, strokeStyle = null) {
+  const points = [
+    projectWaferPoint(x, y, projection),
+    projectWaferPoint(x + width, y, projection),
+    projectWaferPoint(x + width, y + height, projection),
+    projectWaferPoint(x, y + height, projection),
+  ];
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  points.slice(1).forEach((point) => ctx.lineTo(point.x, point.y));
+  ctx.closePath();
+  if (fillStyle) {
+    ctx.fillStyle = fillStyle;
+    ctx.fill();
+  }
+  if (strokeStyle) {
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = 0.7;
+    ctx.stroke();
+  }
+}
+
+function drawReticleShotGrid(ctx, { cx, cy, scale, waferDiameter, reticlePacking, projection = null }) {
+  ctx.strokeStyle = "rgba(106, 219, 230, 0.28)";
+  ctx.lineWidth = 1;
+  if (projection) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    calculateReticleShotGrid({ waferDiameter, reticlePacking }).rects.forEach((rect) => {
+      drawProjectedRect(ctx, rect.x * scale, rect.y * scale, rect.width * scale, rect.height * scale, projection, null, "rgba(106, 219, 230, 0.28)");
+    });
+    ctx.restore();
+    return;
+  }
+  calculateReticleShotGrid({ waferDiameter, reticlePacking }).rects.forEach((rect) => {
+    ctx.strokeRect(cx + rect.x * scale, cy + rect.y * scale, rect.width * scale, rect.height * scale);
+  });
 }
 
 function drawWaferMapLabel(ctx, { width, title, stats }) {
@@ -1409,6 +1671,49 @@ function updateReticleReadout(packing) {
   setText("reticleUtilization", `${formatNumber(packing.utilization * 100, 4)}%`);
 }
 
+function calculateReticleRenderLayout({ canvasWidth, canvasHeight, packing }) {
+  const width = Math.max(1, Number(canvasWidth) || 1);
+  const height = Math.max(1, Number(canvasHeight) || 1);
+  const margin = Math.max(22, Math.min(width, height) * 0.07);
+  const fieldRatio = packing.usableWidth / packing.usableHeight || 1;
+  let fieldH = height - margin * 2;
+  let fieldW = fieldH * fieldRatio;
+  if (fieldW > width - margin * 2) {
+    fieldW = width - margin * 2;
+    fieldH = fieldW / fieldRatio;
+  }
+  const fieldX = (width - fieldW) / 2;
+  const fieldY = (height - fieldH) / 2;
+  const minimumActiveGutterPx = Math.max(10, Math.min(width, height) * 0.018);
+  const mapMaxW = Math.max(1, fieldW - minimumActiveGutterPx * 2);
+  const mapMaxH = Math.max(1, fieldH - minimumActiveGutterPx * 2);
+  const scale = packing.usableWidth > 0 && packing.usableHeight > 0 ? Math.min(mapMaxW / packing.usableWidth, mapMaxH / packing.usableHeight) : 1;
+  const mapW = packing.usableWidth * scale;
+  const mapH = packing.usableHeight * scale;
+  const mapX = fieldX + (fieldW - mapW) / 2;
+  const mapY = fieldY + (fieldH - mapH) / 2;
+  const activeX = mapX + packing.offsetX * scale;
+  const activeY = mapY + packing.offsetY * scale;
+  const activeW = packing.occupiedWidth * scale;
+  const activeH = packing.occupiedHeight * scale;
+  return {
+    fieldX,
+    fieldY,
+    fieldW,
+    fieldH,
+    mapX,
+    mapY,
+    mapW,
+    mapH,
+    scale,
+    activeX,
+    activeY,
+    activeW,
+    activeH,
+    minimumActiveGutterPx,
+  };
+}
+
 function drawReticleResults(canvas, packing, { showBackground = true } = {}) {
   if (!canvas) {
     return;
@@ -1421,18 +1726,22 @@ function drawReticleResults(canvas, packing, { showBackground = true } = {}) {
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, width, height);
 
-  const margin = Math.max(22, Math.min(width, height) * 0.07);
-  const fieldRatio = packing.usableWidth / packing.usableHeight || 1;
-  let fieldH = height - margin * 2;
-  let fieldW = fieldH * fieldRatio;
-  if (fieldW > width - margin * 2) {
-    fieldW = width - margin * 2;
-    fieldH = fieldW / fieldRatio;
-  }
-  const fieldX = (width - fieldW) / 2;
-  const fieldY = (height - fieldH) / 2;
-  const scale = fieldW / packing.usableWidth;
+  const { fieldX, fieldY, fieldW, fieldH, mapX, mapY, scale, activeX, activeY, activeW, activeH } = calculateReticleRenderLayout({
+    canvasWidth: width,
+    canvasHeight: height,
+    packing,
+  });
 
+  if (showBackground) {
+    const fieldGradient = ctx.createLinearGradient(fieldX, fieldY, fieldX + fieldW, fieldY + fieldH);
+    fieldGradient.addColorStop(0, "rgba(30, 42, 39, 0.42)");
+    fieldGradient.addColorStop(1, "rgba(26, 28, 38, 0.42)");
+    ctx.fillStyle = fieldGradient;
+    ctx.fillRect(fieldX, fieldY, fieldW, fieldH);
+  }
+  ctx.strokeStyle = "rgba(224, 229, 232, 0.5)";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(fieldX, fieldY, fieldW, fieldH);
   drawReticleRegistrationMarks(ctx, fieldX, fieldY, fieldW, fieldH);
 
   if (showBackground) {
@@ -1441,17 +1750,19 @@ function drawReticleResults(canvas, packing, { showBackground = true } = {}) {
     gradient.addColorStop(0.52, "rgba(126, 148, 176, 0.9)");
     gradient.addColorStop(1, "rgba(143, 111, 174, 0.92)");
     ctx.fillStyle = gradient;
-    ctx.fillRect(fieldX + packing.offsetX * scale, fieldY + packing.offsetY * scale, packing.occupiedWidth * scale, packing.occupiedHeight * scale);
+    ctx.fillRect(activeX, activeY, activeW, activeH);
   }
 
   ctx.strokeStyle = "#354aff";
   ctx.lineWidth = 2;
-  ctx.strokeRect(fieldX + packing.offsetX * scale, fieldY + packing.offsetY * scale, packing.occupiedWidth * scale, packing.occupiedHeight * scale);
+  if (packing.occupiedWidth > 0 && packing.occupiedHeight > 0) {
+    ctx.strokeRect(activeX, activeY, activeW, activeH);
+  }
 
   for (let row = 0; row < packing.rows; row += 1) {
     for (let col = 0; col < packing.columns; col += 1) {
-      const x = fieldX + (packing.offsetX + col * packing.pitchX) * scale;
-      const y = fieldY + (packing.offsetY + row * packing.pitchY) * scale;
+      const x = mapX + (packing.offsetX + col * packing.pitchX) * scale;
+      const y = mapY + (packing.offsetY + row * packing.pitchY) * scale;
       const dieW = packing.dieWidth * scale;
       const dieH = packing.dieHeight * scale;
       if (!showBackground) {
@@ -1940,6 +2251,10 @@ if (typeof window !== "undefined") {
     calculateYield,
     calculateLogicFoldingYield,
     calculateReticlePacking,
+    calculateReticleShotGrid,
+    calculateReticleRenderLayout,
+    calculateLogicFoldingStackLayout,
+    projectWaferPoint,
     generateSubstrateDies,
   };
 }
