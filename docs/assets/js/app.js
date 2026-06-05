@@ -14,6 +14,10 @@ const SITE_CONFIG = Object.freeze({
 
 const DATA_URL = SITE_CONFIG.dataUrl;
 const ALL_VALUE = "__all";
+const WAFER_EDGE_FILL = "rgba(255, 189, 84, 0.45)";
+const WAFER_NO_PRINT_FILL = "rgba(180, 187, 194, 0.30)";
+const LOGICFOLDING_WAFER_EDGE_FILL = "rgba(255, 189, 84, 0.48)";
+const LOGICFOLDING_NO_PRINT_FILL = "rgba(180, 187, 194, 0.42)";
 const LOGICFOLDING_DIE_STROKE = "rgba(2, 8, 6, 0.92)";
 const LOGICFOLDING_DIE_STROKE_WIDTH = 1.05;
 const LOGICFOLDING_LAYER_ALPHA = 0.78;
@@ -98,7 +102,8 @@ const I18N = {
     "yield.goodLegend": "good die",
     "yield.badLegend": "defect loss",
     "yield.edgeLegend": "wafer edge",
-    "yield.mapStats": "die {width} x {height} mm | area {area} mm2 | gross {gross} | good {good} | defect {bad} | no-print {edge}",
+    "yield.noPrintLegend": "no-print shot",
+    "yield.mapStats": "die {width} x {height} mm | area {area} mm2 | gross {gross} | good {good} | defect {bad} | edge {edge} | no-print {noPrint}",
     "reports.eyebrow": "SOURCE REPORTS",
     "reports.title": "Reports and data exports",
     "reports.lead": "Download the v0.4.2 normalized CSV exports used by the interactive pages.",
@@ -191,7 +196,8 @@ const I18N = {
     "yield.goodLegend": "良品 die",
     "yield.badLegend": "缺陷损失",
     "yield.edgeLegend": "晶圆边界",
-    "yield.mapStats": "die {width} x {height} mm | 面积 {area} mm2 | gross {gross} | 良品 {good} | 缺陷 {bad} | 不曝光 {edge}",
+    "yield.noPrintLegend": "未曝光 shot",
+    "yield.mapStats": "die {width} x {height} mm | 面积 {area} mm2 | gross {gross} | 良品 {good} | 缺陷 {bad} | 边缘 {edge} | 未曝光 {noPrint}",
     "reports.eyebrow": "SOURCE REPORTS",
     "reports.title": "报告与数据导出",
     "reports.lead": "下载交互页面使用的 v0.4.2 规范化 CSV 导出。",
@@ -1076,12 +1082,17 @@ function generateSubstrateDies({ dieWidth, dieHeight, waferDiameter, edgeLoss = 
   const seed = Math.round(dieWidth * 37 + dieHeight * 71 + waferDiameter + edgeLoss * 11 + notchKeepOut * 19);
   const seen = new Set();
 
-  const classifyCell = (cell) => {
+  const addUniqueCell = (bucket, cell) => {
     const key = `${cell.row}:${cell.col}:${cell.x.toFixed(4)}:${cell.y.toFixed(4)}`;
     if (seen.has(key)) {
-      return;
+      return false;
     }
     seen.add(key);
+    bucket.push(cell);
+    return true;
+  };
+
+  const measureCell = (cell) => {
     const cellWidth = cell.width || dieWidth;
     const cellHeight = cell.height || dieHeight;
     const centerX = cell.x + cellWidth / 2;
@@ -1089,31 +1100,43 @@ function generateSubstrateDies({ dieWidth, dieHeight, waferDiameter, edgeLoss = 
     const corners = dieCorners(cell.x, cell.y, cellWidth, cellHeight);
     const centerInsideWafer = Math.hypot(centerX, centerY) <= waferRadius;
     const anyCornerInsideWafer = corners.some(([px, py]) => Math.hypot(px, py) <= waferRadius);
-    if (!centerInsideWafer && !anyCornerInsideWafer) {
+    const visible = centerInsideWafer || anyCornerInsideWafer;
+    const fullInsideWafer = visible && corners.every(([px, py]) => Math.hypot(px, py) <= waferRadius);
+    const fullInsideUsable = visible && corners.every(([px, py]) => Math.hypot(px, py) <= usableRadius);
+    const notchExcluded = visible && isInsideNotchKeepOut(centerX, centerY, waferRadius, notchKeepOut);
+    return {
+      visible,
+      fullInsideWafer,
+      printable: fullInsideWafer && fullInsideUsable && !notchExcluded,
+    };
+  };
+
+  const classifyCell = (cell) => {
+    const geometry = measureCell(cell);
+    if (!geometry.visible) {
       return;
     }
-    if (corners.some(([px, py]) => Math.hypot(px, py) > waferRadius)) {
-      partialDies.push(cell);
+    if (!geometry.fullInsideWafer) {
+      addUniqueCell(partialDies, cell);
       return;
     }
-    const fullInsideUsable = corners.every(([px, py]) => Math.hypot(px, py) <= usableRadius);
-    const notchExcluded = isInsideNotchKeepOut(centerX, centerY, waferRadius, notchKeepOut);
-    if (fullInsideUsable && !notchExcluded) {
-      fullDies.push(cell);
+    if (geometry.printable) {
+      addUniqueCell(fullDies, cell);
     } else {
-      excludedDies.push(cell);
+      addUniqueCell(excludedDies, cell);
     }
   };
 
   if (reticlePacking?.diePerReticle) {
     calculateReticleShotGrid({ waferDiameter, reticlePacking }).rects.forEach((shot) => {
+      const shotCells = [];
       for (let localRow = 0; localRow < reticlePacking.rows; localRow += 1) {
         for (let localCol = 0; localCol < reticlePacking.columns; localCol += 1) {
           const row = shot.row * reticlePacking.rows + localRow;
           const col = shot.col * reticlePacking.columns + localCol;
           const x = shot.x + localCol * reticlePacking.pitchX;
           const y = shot.y + localRow * reticlePacking.pitchY;
-          classifyCell({
+          const cell = {
             x,
             y,
             width: reticlePacking.dieWidth,
@@ -1122,9 +1145,23 @@ function generateSubstrateDies({ dieWidth, dieHeight, waferDiameter, edgeLoss = 
             col,
             shot,
             noise: deterministicNoise(row, col, seed),
-          });
+          };
+          const geometry = measureCell(cell);
+          if (geometry.visible) {
+            shotCells.push({ cell, geometry });
+          }
         }
       }
+      const exposeShot = shotCells.some(({ geometry }) => geometry.printable);
+      shotCells.forEach(({ cell, geometry }) => {
+        if (!exposeShot) {
+          addUniqueCell(excludedDies, cell);
+        } else if (geometry.printable) {
+          addUniqueCell(fullDies, cell);
+        } else {
+          addUniqueCell(partialDies, cell);
+        }
+      });
     });
     return { fullDies, partialDies, excludedDies };
   }
@@ -1363,9 +1400,13 @@ function drawLayerWafer(ctx, { cx, cy, radius, scale, substrate, good, seedOffse
 
   const sampleCells = (cells, maxCells) =>
     cells.length > maxCells ? cells.filter((_, index) => index % Math.ceil(cells.length / maxCells) === 0) : cells;
-  const visualEdgeLoss = sampleCells(substrate.excludedDies || [], 260);
-  visualEdgeLoss.forEach((cell) => {
-    drawLayerDieCell(ctx, cell, cx, cy, scale, "rgba(255, 189, 84, 0.48)", projection);
+  const visualNoPrintDies = sampleCells(substrate.excludedDies || [], 260);
+  const visualEdgeDies = sampleCells(substrate.partialDies || [], 260);
+  visualNoPrintDies.forEach((cell) => {
+    drawLayerDieCell(ctx, cell, cx, cy, scale, LOGICFOLDING_NO_PRINT_FILL, projection);
+  });
+  visualEdgeDies.forEach((cell) => {
+    drawLayerDieCell(ctx, cell, cx, cy, scale, LOGICFOLDING_WAFER_EDGE_FILL, projection);
   });
 
   const fullDies =
@@ -1455,7 +1496,9 @@ function drawWaferCutMap({
   const radius = Math.min(width, height) * 0.39;
   const scale = radius / (waferDiameter / 2);
   const visualDies = waferDies.length > 2500 ? waferDies.filter((_, index) => index % Math.ceil(waferDies.length / 2500) === 0) : waferDies;
-  const visualEdgeLoss =
+  const visualEdgeDies =
+    partialDies.length > 900 ? partialDies.filter((_, index) => index % Math.ceil(partialDies.length / 900) === 0) : partialDies;
+  const visualNoPrintDies =
     excludedDies.length > 900 ? excludedDies.filter((_, index) => index % Math.ceil(excludedDies.length / 900) === 0) : excludedDies;
   const badCount = Math.max(0, waferDies.length - good);
   const badSet = new Set(
@@ -1474,8 +1517,11 @@ function drawWaferCutMap({
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
   ctx.clip();
 
-  visualEdgeLoss.forEach((cell) => {
-    drawWaferDieCell(ctx, cell, cx, cy, scale, "rgba(255, 189, 84, 0.45)");
+  visualNoPrintDies.forEach((cell) => {
+    drawWaferDieCell(ctx, cell, cx, cy, scale, WAFER_NO_PRINT_FILL);
+  });
+  visualEdgeDies.forEach((cell) => {
+    drawWaferDieCell(ctx, cell, cx, cy, scale, WAFER_EDGE_FILL);
   });
   visualDies.forEach((cell) => {
     const bad = badSet.has(`${cell.row}:${cell.col}`);
@@ -1512,7 +1558,8 @@ function drawWaferCutMap({
       gross: formatNumber(waferDies.length, 0),
       good: formatNumber(good, 0),
       bad: formatNumber(badCount, 0),
-      edge: formatNumber(excludedDies.length, 0),
+      edge: formatNumber(partialDies.length, 0),
+      noPrint: formatNumber(excludedDies.length, 0),
     }),
   });
   drawLegend(ctx, width, height);
@@ -1622,6 +1669,7 @@ function drawLegend(ctx, width, height) {
     ["#46efb4", t("yield.goodLegend")],
     ["#ff7568", t("yield.badLegend")],
     ["#ffbd54", t("yield.edgeLegend")],
+    [WAFER_NO_PRINT_FILL, t("yield.noPrintLegend")],
   ];
   if (width < 520) {
     const x = 14;
@@ -1637,16 +1685,18 @@ function drawLegend(ctx, width, height) {
     });
     return;
   }
-  let x = width - 318;
+  const itemWidths = items.map(([, label]) => Math.max(84, label.length * 8 + 28));
+  const totalWidth = itemWidths.reduce((total, value) => total + value, 0);
+  let x = Math.max(24, width - totalWidth - 24);
   const y = 24;
   ctx.textAlign = "left";
-  items.forEach(([color, label]) => {
+  items.forEach(([color, label], index) => {
     ctx.fillStyle = color;
     ctx.fillRect(x, y, 10, 10);
     ctx.fillStyle = "#c5d6cd";
     ctx.font = "12px Segoe UI";
     ctx.fillText(label, x + 15, y + 10);
-    x += Math.max(84, label.length * 8 + 28);
+    x += itemWidths[index];
   });
 }
 

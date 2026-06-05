@@ -152,9 +152,43 @@ test("reticle packing auto-rotates equivalent die dimensions to the same best la
   assert.equal(wide.rotated, false);
 });
 
-test("wafer edge loss rendering uses non-printable excluded dies rather than clipped partial dies", () => {
-  assert.match(appJs, /visualEdgeLoss/);
+test("wafer edge and no-print rendering use separate die buckets and colors", () => {
+  assert.match(appJs, /const WAFER_EDGE_FILL = "rgba\(255, 189, 84, 0\.45\)"/);
+  assert.match(appJs, /const WAFER_NO_PRINT_FILL = "rgba\(180, 187, 194, 0\.30\)"/);
+  assert.match(appJs, /const LOGICFOLDING_WAFER_EDGE_FILL = "rgba\(255, 189, 84, 0\.48\)"/);
+  assert.match(appJs, /const LOGICFOLDING_NO_PRINT_FILL = "rgba\(180, 187, 194, 0\.42\)"/);
+  assert.match(appJs, /const visualEdgeDies =[\s\S]*partialDies/);
+  assert.match(appJs, /const visualNoPrintDies =[\s\S]*excludedDies/);
   assert.doesNotMatch(appJs, /visualPartial\.forEach/);
+});
+
+test("reticle no-print dies are classified at whole-shot exposure granularity", async () => {
+  const helpers = await loadYieldHelpers();
+  const packing = helpers.calculateReticlePacking({
+    dieWidth: 10,
+    dieHeight: 10,
+    scribeX: 0.2,
+    scribeY: 0.2,
+    reticleWidth: 26,
+    reticleHeight: 33,
+    halfField: false,
+  });
+  const substrate = helpers.generateSubstrateDies({
+    dieWidth: 10,
+    dieHeight: 10,
+    waferDiameter: 300,
+    edgeLoss: 3,
+    notchKeepOut: 5,
+    reticlePacking: packing,
+  });
+  const shotKey = (die) => `${die.shot.row}:${die.shot.col}`;
+  const exposedShots = new Set([...substrate.fullDies, ...substrate.partialDies].map(shotKey));
+  const noPrintShots = new Set(substrate.excludedDies.map(shotKey));
+
+  assert.ok(noPrintShots.size > 0);
+  for (const key of noPrintShots) {
+    assert.equal(exposedShots.has(key), false, `shot ${key} mixes exposed dies with no-print dies`);
+  }
 });
 
 test("reticle render layout keeps near-full die arrays clear of the frame", async () => {
