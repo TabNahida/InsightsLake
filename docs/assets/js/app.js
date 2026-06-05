@@ -18,6 +18,7 @@ const LOGICFOLDING_DIE_STROKE = "rgba(2, 8, 6, 0.92)";
 const LOGICFOLDING_DIE_STROKE_WIDTH = 1.05;
 const LOGICFOLDING_LAYER_ALPHA = 0.78;
 const LOGICFOLDING_LABEL_FILL = "rgba(237, 246, 240, 0.8)";
+const LOGICFOLDING_MAX_RENDERED_FULL_DIES = 2500;
 
 const I18N = {
   en: {
@@ -97,7 +98,7 @@ const I18N = {
     "yield.goodLegend": "good die",
     "yield.badLegend": "defect loss",
     "yield.edgeLegend": "wafer edge",
-    "yield.mapStats": "die {width} x {height} mm | area {area} mm2 | gross {gross} | good {good} | lost {bad}",
+    "yield.mapStats": "die {width} x {height} mm | area {area} mm2 | gross {gross} | good {good} | defect {bad} | no-print {edge}",
     "reports.eyebrow": "SOURCE REPORTS",
     "reports.title": "Reports and data exports",
     "reports.lead": "Download the v0.4.2 normalized CSV exports used by the interactive pages.",
@@ -190,7 +191,7 @@ const I18N = {
     "yield.goodLegend": "良品 die",
     "yield.badLegend": "缺陷损失",
     "yield.edgeLegend": "晶圆边界",
-    "yield.mapStats": "die {width} x {height} mm | 面积 {area} mm2 | gross {gross} | 良品 {good} | 损失 {bad}",
+    "yield.mapStats": "die {width} x {height} mm | 面积 {area} mm2 | gross {gross} | 良品 {good} | 缺陷 {bad} | 不曝光 {edge}",
     "reports.eyebrow": "SOURCE REPORTS",
     "reports.title": "报告与数据导出",
     "reports.lead": "下载交互页面使用的 v0.4.2 规范化 CSV 导出。",
@@ -890,8 +891,10 @@ function calculateReticlePacking({ dieWidth, dieHeight, scribeX = 0, scribeY = 0
   const safeDieHeight = Math.max(0, Number(dieHeight) || 0);
   const safeScribeX = Math.max(0, Number(scribeX) || 0);
   const safeScribeY = Math.max(0, Number(scribeY) || 0);
-  const usableWidth = Math.max(0, (Number(reticleWidth) || 26) * (halfField ? 0.5 : 1));
-  const usableHeight = Math.max(0, Number(reticleHeight) || 33);
+  const fullReticleWidth = Math.max(0, Number(reticleWidth) || 26);
+  const fullReticleHeight = Math.max(0, Number(reticleHeight) || 33);
+  const usableWidth = halfField && fullReticleWidth >= fullReticleHeight ? fullReticleWidth * 0.5 : fullReticleWidth;
+  const usableHeight = halfField && fullReticleHeight > fullReticleWidth ? fullReticleHeight * 0.5 : fullReticleHeight;
   const buildCandidate = ({ layoutDieWidth, layoutDieHeight, layoutScribeX, layoutScribeY, rotated }) => {
     const pitchX = layoutDieWidth + layoutScribeX;
     const pitchY = layoutDieHeight + layoutScribeY;
@@ -941,8 +944,8 @@ function calculateReticlePacking({ dieWidth, dieHeight, scribeX = 0, scribeY = 0
       : normal;
 
   return {
-    reticleWidth: Number(reticleWidth) || 26,
-    reticleHeight: Number(reticleHeight) || 33,
+    reticleWidth: fullReticleWidth,
+    reticleHeight: fullReticleHeight,
     usableWidth,
     usableHeight,
     inputDieWidth: safeDieWidth,
@@ -1360,14 +1363,15 @@ function drawLayerWafer(ctx, { cx, cy, radius, scale, substrate, good, seedOffse
 
   const sampleCells = (cells, maxCells) =>
     cells.length > maxCells ? cells.filter((_, index) => index % Math.ceil(cells.length / maxCells) === 0) : cells;
-  sampleCells(substrate.partialDies || [], 260).forEach((cell) => {
+  const visualEdgeLoss = sampleCells(substrate.excludedDies || [], 260);
+  visualEdgeLoss.forEach((cell) => {
     drawLayerDieCell(ctx, cell, cx, cy, scale, "rgba(255, 189, 84, 0.48)", projection);
   });
-  sampleCells(substrate.excludedDies || [], 160).forEach((cell) => {
-    drawLayerDieCell(ctx, cell, cx, cy, scale, "rgba(84, 93, 99, 0.5)", projection);
-  });
 
-  const fullDies = substrate.fullDies.length > 900 ? substrate.fullDies.filter((_, index) => index % Math.ceil(substrate.fullDies.length / 900) === 0) : substrate.fullDies;
+  const fullDies =
+    substrate.fullDies.length > LOGICFOLDING_MAX_RENDERED_FULL_DIES
+      ? substrate.fullDies.filter((_, index) => index % Math.ceil(substrate.fullDies.length / LOGICFOLDING_MAX_RENDERED_FULL_DIES) === 0)
+      : substrate.fullDies;
   const badCount = Math.max(0, substrate.fullDies.length - good);
   const badSet = new Set(
     [...substrate.fullDies]
@@ -1451,9 +1455,7 @@ function drawWaferCutMap({
   const radius = Math.min(width, height) * 0.39;
   const scale = radius / (waferDiameter / 2);
   const visualDies = waferDies.length > 2500 ? waferDies.filter((_, index) => index % Math.ceil(waferDies.length / 2500) === 0) : waferDies;
-  const visualPartial =
-    partialDies.length > 900 ? partialDies.filter((_, index) => index % Math.ceil(partialDies.length / 900) === 0) : partialDies;
-  const visualExcluded =
+  const visualEdgeLoss =
     excludedDies.length > 900 ? excludedDies.filter((_, index) => index % Math.ceil(excludedDies.length / 900) === 0) : excludedDies;
   const badCount = Math.max(0, waferDies.length - good);
   const badSet = new Set(
@@ -1472,11 +1474,8 @@ function drawWaferCutMap({
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
   ctx.clip();
 
-  visualPartial.forEach((cell) => {
+  visualEdgeLoss.forEach((cell) => {
     drawWaferDieCell(ctx, cell, cx, cy, scale, "rgba(255, 189, 84, 0.45)");
-  });
-  visualExcluded.forEach((cell) => {
-    drawWaferDieCell(ctx, cell, cx, cy, scale, "rgba(180, 187, 194, 0.26)");
   });
   visualDies.forEach((cell) => {
     const bad = badSet.has(`${cell.row}:${cell.col}`);
@@ -1513,6 +1512,7 @@ function drawWaferCutMap({
       gross: formatNumber(waferDies.length, 0),
       good: formatNumber(good, 0),
       bad: formatNumber(badCount, 0),
+      edge: formatNumber(excludedDies.length, 0),
     }),
   });
   drawLegend(ctx, width, height);

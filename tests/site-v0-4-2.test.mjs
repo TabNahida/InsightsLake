@@ -95,6 +95,35 @@ test("reticle packing uses physical die and scribe dimensions", async () => {
   assert.ok(packing.utilization > 0.89 && packing.utilization < 0.9);
 });
 
+test("half-field exposure halves the longer reticle side", async () => {
+  const helpers = await loadYieldHelpers();
+  const portrait = helpers.calculateReticlePacking({
+    dieWidth: 8,
+    dieHeight: 8,
+    scribeX: 0.2,
+    scribeY: 0.2,
+    reticleWidth: 26,
+    reticleHeight: 33,
+    halfField: true,
+  });
+  assert.equal(portrait.usableWidth, 26);
+  assert.equal(portrait.usableHeight, 16.5);
+  assert.equal(portrait.columns, 3);
+  assert.equal(portrait.rows, 2);
+
+  const landscape = helpers.calculateReticlePacking({
+    dieWidth: 8,
+    dieHeight: 8,
+    scribeX: 0.2,
+    scribeY: 0.2,
+    reticleWidth: 40,
+    reticleHeight: 20,
+    halfField: true,
+  });
+  assert.equal(landscape.usableWidth, 20);
+  assert.equal(landscape.usableHeight, 20);
+});
+
 test("reticle packing auto-rotates equivalent die dimensions to the same best layout", async () => {
   const helpers = await loadYieldHelpers();
   const tall = helpers.calculateReticlePacking({
@@ -121,6 +150,11 @@ test("reticle packing auto-rotates equivalent die dimensions to the same best la
   assert.equal(Number(tall.utilization.toFixed(8)), Number(wide.utilization.toFixed(8)));
   assert.equal(tall.rotated, true);
   assert.equal(wide.rotated, false);
+});
+
+test("wafer edge loss rendering uses non-printable excluded dies rather than clipped partial dies", () => {
+  assert.match(appJs, /visualEdgeLoss/);
+  assert.doesNotMatch(appJs, /visualPartial\.forEach/);
 });
 
 test("reticle render layout keeps near-full die arrays clear of the frame", async () => {
@@ -186,6 +220,11 @@ test("LogicFolding stack no longer renders dashed inter-layer guide lines", () =
 test("LogicFolding projected die grid uses a stronger divider stroke", () => {
   assert.match(appJs, /const LOGICFOLDING_DIE_STROKE = "rgba\(2, 8, 6, 0\.92\)"/);
   assert.match(appJs, /const LOGICFOLDING_DIE_STROKE_WIDTH = 1\.05/);
+});
+
+test("LogicFolding renders 8x8 die grids without sampling out good dies", () => {
+  assert.match(appJs, /const LOGICFOLDING_MAX_RENDERED_FULL_DIES = 2500/);
+  assert.doesNotMatch(appJs, /substrate\.fullDies\.length > 900/);
 });
 
 test("LogicFolding layer brightness stays constant across deep stacks", () => {
