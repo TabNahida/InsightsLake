@@ -14,14 +14,23 @@ const SITE_CONFIG = Object.freeze({
 
 const DATA_URL = SITE_CONFIG.dataUrl;
 const ALL_VALUE = "__all";
-const WAFER_EDGE_FILL = "rgba(255, 189, 84, 0.45)";
-const WAFER_NO_PRINT_FILL = "rgba(180, 187, 194, 0.30)";
-const LOGICFOLDING_WAFER_EDGE_FILL = "rgba(255, 189, 84, 0.48)";
-const LOGICFOLDING_NO_PRINT_FILL = "rgba(180, 187, 194, 0.42)";
-const LOGICFOLDING_DIE_STROKE = "rgba(2, 8, 6, 0.92)";
+const CANVAS_BG_FILL = "#050a0f";
+const CANVAS_PANEL_FILL = "rgba(11, 18, 26, 0.9)";
+const CANVAS_TEXT_FILL = "rgba(244, 248, 251, 0.9)";
+const CANVAS_MUTED_FILL = "rgba(147, 167, 184, 0.92)";
+const WAFER_GOOD_FILL = "rgba(82, 218, 190, 0.64)";
+const WAFER_BAD_FILL = "rgba(255, 124, 116, 0.70)";
+const WAFER_EDGE_FILL = "rgba(230, 178, 84, 0.50)";
+const WAFER_NO_PRINT_FILL = "rgba(112, 132, 149, 0.36)";
+const WAFER_GRID_STROKE = "rgba(103, 214, 255, 0.22)";
+const WAFER_OUTLINE_STROKE = "rgba(230, 178, 84, 0.78)";
+const WAFER_DIE_STROKE = "rgba(4, 10, 15, 0.76)";
+const LOGICFOLDING_WAFER_EDGE_FILL = WAFER_EDGE_FILL;
+const LOGICFOLDING_NO_PRINT_FILL = WAFER_NO_PRINT_FILL;
+const LOGICFOLDING_DIE_STROKE = WAFER_DIE_STROKE;
 const LOGICFOLDING_DIE_STROKE_WIDTH = 1.05;
 const LOGICFOLDING_LAYER_ALPHA = 0.78;
-const LOGICFOLDING_LABEL_FILL = "rgba(237, 246, 240, 0.8)";
+const LOGICFOLDING_LABEL_FILL = CANVAS_TEXT_FILL;
 const LOGICFOLDING_MAX_RENDERED_FULL_DIES = 2500;
 
 const I18N = {
@@ -1337,7 +1346,7 @@ function drawLogicFoldingWaferStack({ canvas, dieWidth, dieHeight, dieArea, wafe
   const width = size.width;
   const height = size.height;
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#050606";
+  ctx.fillStyle = CANVAS_BG_FILL;
   ctx.fillRect(0, 0, width, height);
 
   const layout = calculateLogicFoldingStackLayout({
@@ -1369,9 +1378,9 @@ function drawLogicFoldingWaferStack({ canvas, dieWidth, dieHeight, dieArea, wafe
     );
   }
 
-  ctx.fillStyle = "rgba(17, 22, 27, 0.86)";
+  ctx.fillStyle = CANVAS_PANEL_FILL;
   ctx.fillRect(24, layout.infoBandY, width - 48, layout.infoBandHeight);
-  ctx.fillStyle = "rgba(197, 214, 205, 0.9)";
+  ctx.fillStyle = CANVAS_MUTED_FILL;
   ctx.font = "12px Segoe UI";
   ctx.fillText(
     `Shared die ${formatNumber(dieWidth, 1)} x ${formatNumber(dieHeight, 1)} mm | area ${formatNumber(dieArea, 1)} mm2 | layers ${layers}`,
@@ -1390,7 +1399,7 @@ function drawLayerWafer(ctx, { cx, cy, radius, scale, substrate, good, seedOffse
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
   }
   ctx.clip();
-  ctx.fillStyle = "rgba(18, 38, 32, 0.84)";
+  ctx.fillStyle = "rgba(9, 28, 33, 0.76)";
   if (projection) {
     traceProjectedWaferPath(ctx, radius, projection);
     ctx.fill();
@@ -1422,7 +1431,7 @@ function drawLayerWafer(ctx, { cx, cy, radius, scale, substrate, good, seedOffse
   );
   fullDies.forEach((cell) => {
     const bad = badSet.has(`${cell.row}:${cell.col}`);
-    drawLayerDieCell(ctx, cell, cx, cy, scale, bad ? "rgba(255, 117, 104, 0.64)" : "rgba(49, 236, 88, 0.64)", projection);
+    drawLayerDieCell(ctx, cell, cx, cy, scale, bad ? WAFER_BAD_FILL : WAFER_GOOD_FILL, projection);
   });
   ctx.restore();
 
@@ -1430,7 +1439,7 @@ function drawLayerWafer(ctx, { cx, cy, radius, scale, substrate, good, seedOffse
   if (projection) {
     ctx.translate(cx, cy);
   }
-  ctx.strokeStyle = "rgba(255, 189, 84, 0.9)";
+  ctx.strokeStyle = WAFER_OUTLINE_STROKE;
   ctx.lineWidth = 3;
   if (projection) {
     traceProjectedWaferPath(ctx, radius, projection);
@@ -1509,7 +1518,7 @@ function drawWaferCutMap({
   );
 
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#070a09";
+  ctx.fillStyle = CANVAS_BG_FILL;
   ctx.fillRect(0, 0, width, height);
 
   ctx.save();
@@ -1525,7 +1534,7 @@ function drawWaferCutMap({
   });
   visualDies.forEach((cell) => {
     const bad = badSet.has(`${cell.row}:${cell.col}`);
-    drawWaferDieCell(ctx, cell, cx, cy, scale, bad ? "rgba(255, 117, 104, 0.72)" : "rgba(70, 239, 180, 0.55)");
+    drawWaferDieCell(ctx, cell, cx, cy, scale, bad ? WAFER_BAD_FILL : WAFER_GOOD_FILL);
   });
 
   if (showReticleGrid && reticlePacking?.diePerReticle) {
@@ -1534,13 +1543,13 @@ function drawWaferCutMap({
 
   ctx.restore();
 
-  ctx.strokeStyle = "rgba(255, 189, 84, 0.82)";
+  ctx.strokeStyle = WAFER_OUTLINE_STROKE;
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
   ctx.stroke();
 
-  ctx.strokeStyle = "rgba(103, 235, 184, 0.28)";
+  ctx.strokeStyle = WAFER_GRID_STROKE;
   ctx.lineWidth = 1;
   for (let r = radius * 0.25; r < radius; r += radius * 0.25) {
     ctx.beginPath();
@@ -1572,7 +1581,7 @@ function drawWaferDieCell(ctx, cell, cx, cy, scale, fillStyle) {
   const rectH = Math.max(1.2, cell.height * scale);
   ctx.fillStyle = fillStyle;
   ctx.fillRect(rectX + 0.7, rectY + 0.7, Math.max(0.8, rectW - 1.4), Math.max(0.8, rectH - 1.4));
-  ctx.strokeStyle = "rgba(7, 10, 9, 0.75)";
+  ctx.strokeStyle = WAFER_DIE_STROKE;
   ctx.lineWidth = 0.7;
   ctx.strokeRect(rectX + 0.7, rectY + 0.7, Math.max(0.8, rectW - 1.4), Math.max(0.8, rectH - 1.4));
 }
@@ -1633,13 +1642,13 @@ function drawProjectedRect(ctx, x, y, width, height, projection, fillStyle = nul
 }
 
 function drawReticleShotGrid(ctx, { cx, cy, scale, waferDiameter, reticlePacking, projection = null }) {
-  ctx.strokeStyle = "rgba(106, 219, 230, 0.28)";
+  ctx.strokeStyle = WAFER_GRID_STROKE;
   ctx.lineWidth = 1;
   if (projection) {
     ctx.save();
     ctx.translate(cx, cy);
     calculateReticleShotGrid({ waferDiameter, reticlePacking }).rects.forEach((rect) => {
-      drawProjectedRect(ctx, rect.x * scale, rect.y * scale, rect.width * scale, rect.height * scale, projection, null, "rgba(106, 219, 230, 0.28)");
+      drawProjectedRect(ctx, rect.x * scale, rect.y * scale, rect.width * scale, rect.height * scale, projection, null, WAFER_GRID_STROKE);
     });
     ctx.restore();
     return;
@@ -1651,11 +1660,11 @@ function drawReticleShotGrid(ctx, { cx, cy, scale, waferDiameter, reticlePacking
 
 function drawWaferMapLabel(ctx, { width, title, stats }) {
   const inset = width < 520 ? 14 : 24;
-  ctx.fillStyle = "#c5d6cd";
+  ctx.fillStyle = CANVAS_TEXT_FILL;
   ctx.font = "700 13px Segoe UI";
   ctx.textAlign = "left";
   ctx.fillText(title, inset, 26);
-  ctx.fillStyle = "#95a8a0";
+  ctx.fillStyle = CANVAS_MUTED_FILL;
   ctx.font = "12px Segoe UI";
   drawWrappedText(ctx, stats, inset, 47, width - inset * 2, 15, width < 520 ? 2 : 1);
   if (width >= 520) {
@@ -1666,9 +1675,9 @@ function drawWaferMapLabel(ctx, { width, title, stats }) {
 
 function drawLegend(ctx, width, height) {
   const items = [
-    ["#46efb4", t("yield.goodLegend")],
-    ["#ff7568", t("yield.badLegend")],
-    ["#ffbd54", t("yield.edgeLegend")],
+    [WAFER_GOOD_FILL, t("yield.goodLegend")],
+    [WAFER_BAD_FILL, t("yield.badLegend")],
+    [WAFER_EDGE_FILL, t("yield.edgeLegend")],
     [WAFER_NO_PRINT_FILL, t("yield.noPrintLegend")],
   ];
   if (width < 520) {
@@ -1678,7 +1687,7 @@ function drawLegend(ctx, width, height) {
     items.forEach(([color, label]) => {
       ctx.fillStyle = color;
       ctx.fillRect(x, y, 10, 10);
-      ctx.fillStyle = "#c5d6cd";
+      ctx.fillStyle = CANVAS_TEXT_FILL;
       ctx.font = "12px Segoe UI";
       ctx.fillText(label, x + 15, y + 10);
       y += 17;
@@ -1693,7 +1702,7 @@ function drawLegend(ctx, width, height) {
   items.forEach(([color, label], index) => {
     ctx.fillStyle = color;
     ctx.fillRect(x, y, 10, 10);
-    ctx.fillStyle = "#c5d6cd";
+    ctx.fillStyle = CANVAS_TEXT_FILL;
     ctx.font = "12px Segoe UI";
     ctx.fillText(label, x + 15, y + 10);
     x += itemWidths[index];
@@ -1757,7 +1766,7 @@ function drawReticleResults(canvas, packing, { showBackground = true } = {}) {
   const width = size.width;
   const height = size.height;
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "#000";
+  ctx.fillStyle = CANVAS_BG_FILL;
   ctx.fillRect(0, 0, width, height);
 
   const { fieldX, fieldY, fieldW, fieldH, mapX, mapY, scale, activeX, activeY, activeW, activeH } = calculateReticleRenderLayout({
@@ -1768,26 +1777,26 @@ function drawReticleResults(canvas, packing, { showBackground = true } = {}) {
 
   if (showBackground) {
     const fieldGradient = ctx.createLinearGradient(fieldX, fieldY, fieldX + fieldW, fieldY + fieldH);
-    fieldGradient.addColorStop(0, "rgba(30, 42, 39, 0.42)");
-    fieldGradient.addColorStop(1, "rgba(26, 28, 38, 0.42)");
+    fieldGradient.addColorStop(0, "rgba(14, 35, 43, 0.56)");
+    fieldGradient.addColorStop(1, "rgba(11, 18, 26, 0.66)");
     ctx.fillStyle = fieldGradient;
     ctx.fillRect(fieldX, fieldY, fieldW, fieldH);
   }
-  ctx.strokeStyle = "rgba(224, 229, 232, 0.5)";
+  ctx.strokeStyle = "rgba(147, 167, 184, 0.5)";
   ctx.lineWidth = 1;
   ctx.strokeRect(fieldX, fieldY, fieldW, fieldH);
   drawReticleRegistrationMarks(ctx, fieldX, fieldY, fieldW, fieldH);
 
   if (showBackground) {
     const gradient = ctx.createLinearGradient(fieldX, fieldY, fieldX + fieldW, fieldY + fieldH);
-    gradient.addColorStop(0, "rgba(112, 177, 168, 0.94)");
-    gradient.addColorStop(0.52, "rgba(126, 148, 176, 0.9)");
-    gradient.addColorStop(1, "rgba(143, 111, 174, 0.92)");
+    gradient.addColorStop(0, "rgba(82, 218, 190, 0.82)");
+    gradient.addColorStop(0.52, "rgba(103, 214, 255, 0.76)");
+    gradient.addColorStop(1, "rgba(74, 114, 144, 0.82)");
     ctx.fillStyle = gradient;
     ctx.fillRect(activeX, activeY, activeW, activeH);
   }
 
-  ctx.strokeStyle = "#354aff";
+  ctx.strokeStyle = "rgba(103, 214, 255, 0.9)";
   ctx.lineWidth = 2;
   if (packing.occupiedWidth > 0 && packing.occupiedHeight > 0) {
     ctx.strokeRect(activeX, activeY, activeW, activeH);
@@ -1800,10 +1809,10 @@ function drawReticleResults(canvas, packing, { showBackground = true } = {}) {
       const dieW = packing.dieWidth * scale;
       const dieH = packing.dieHeight * scale;
       if (!showBackground) {
-        ctx.fillStyle = col % 2 === 0 ? "rgba(112, 177, 168, 0.8)" : "rgba(143, 111, 174, 0.8)";
+        ctx.fillStyle = col % 2 === 0 ? "rgba(82, 218, 190, 0.68)" : "rgba(103, 214, 255, 0.62)";
         ctx.fillRect(x, y, dieW, dieH);
       }
-      ctx.strokeStyle = "rgba(6, 8, 8, 0.86)";
+      ctx.strokeStyle = WAFER_DIE_STROKE;
       ctx.lineWidth = Math.max(1, Math.min(3, scale * Math.max(packing.scribeX, packing.scribeY, 0.2)));
       ctx.strokeRect(x, y, dieW, dieH);
     }
@@ -1813,7 +1822,7 @@ function drawReticleResults(canvas, packing, { showBackground = true } = {}) {
 function drawReticleRegistrationMarks(ctx, x, y, width, height) {
   const pad = 12;
   const len = Math.min(28, Math.max(16, Math.min(width, height) * 0.08));
-  ctx.strokeStyle = "rgba(226, 229, 232, 0.86)";
+  ctx.strokeStyle = CANVAS_TEXT_FILL;
   ctx.lineWidth = 2;
   [
     [x + pad, y + pad, 1, 1],
@@ -1828,7 +1837,7 @@ function drawReticleRegistrationMarks(ctx, x, y, width, height) {
     ctx.stroke();
   });
 
-  ctx.fillStyle = "rgba(226, 229, 232, 0.88)";
+  ctx.fillStyle = CANVAS_TEXT_FILL;
   [
     [x + width / 2, y + pad],
     [x + width - pad, y + height / 2],
@@ -1912,12 +1921,12 @@ function startWaferAnimation() {
     els.waferDensity.textContent = formatNumber(active.logic, 1);
 
     ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = "#070a09";
+    ctx.fillStyle = CANVAS_BG_FILL;
     ctx.fillRect(0, 0, width, height);
 
     ctx.save();
     ctx.translate(cx, cy);
-    ctx.strokeStyle = "rgba(103, 235, 184, 0.35)";
+    ctx.strokeStyle = WAFER_GRID_STROKE;
     ctx.lineWidth = 1;
     for (let r = radius; r > 30; r -= 32) {
       ctx.beginPath();
@@ -1939,23 +1948,23 @@ function startWaferAnimation() {
       const y = Math.sin(angle) * lane;
       const size = 5 + normalized * 13;
       const pulse = 0.72 + Math.sin(time * 0.004 + index) * 0.28;
-      ctx.fillStyle = row === active ? "#ffbd54" : `rgba(70, 239, 180, ${0.34 + normalized * 0.5})`;
+      ctx.fillStyle = row === active ? "rgba(255, 209, 102, 0.92)" : `rgba(82, 218, 190, ${0.32 + normalized * 0.46})`;
       ctx.beginPath();
       ctx.arc(x, y, size * pulse, 0, Math.PI * 2);
       ctx.fill();
     });
 
-    ctx.strokeStyle = "rgba(255, 189, 84, 0.7)";
+    ctx.strokeStyle = WAFER_OUTLINE_STROKE;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(0, 0, radius + Math.sin(time * 0.002) * 5, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
 
-    ctx.fillStyle = "rgba(237, 246, 240, 0.9)";
+    ctx.fillStyle = CANVAS_TEXT_FILL;
     ctx.font = "700 13px Segoe UI";
     ctx.fillText("LOGIC DENSITY ORBIT", 26, 34);
-    ctx.fillStyle = "rgba(149, 168, 160, 0.9)";
+    ctx.fillStyle = CANVAS_MUTED_FILL;
     ctx.font = "12px Segoe UI";
     ctx.fillText("Top process/library entries from public dataset", 26, 56);
 

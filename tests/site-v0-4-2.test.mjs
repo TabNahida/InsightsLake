@@ -153,10 +153,10 @@ test("reticle packing auto-rotates equivalent die dimensions to the same best la
 });
 
 test("wafer edge and no-print rendering use separate die buckets and colors", () => {
-  assert.match(appJs, /const WAFER_EDGE_FILL = "rgba\(255, 189, 84, 0\.45\)"/);
-  assert.match(appJs, /const WAFER_NO_PRINT_FILL = "rgba\(180, 187, 194, 0\.30\)"/);
-  assert.match(appJs, /const LOGICFOLDING_WAFER_EDGE_FILL = "rgba\(255, 189, 84, 0\.48\)"/);
-  assert.match(appJs, /const LOGICFOLDING_NO_PRINT_FILL = "rgba\(180, 187, 194, 0\.42\)"/);
+  assert.match(appJs, /const WAFER_EDGE_FILL = "rgba\(230, 178, 84, 0\.50\)"/);
+  assert.match(appJs, /const WAFER_NO_PRINT_FILL = "rgba\(112, 132, 149, 0\.36\)"/);
+  assert.match(appJs, /const LOGICFOLDING_WAFER_EDGE_FILL = WAFER_EDGE_FILL/);
+  assert.match(appJs, /const LOGICFOLDING_NO_PRINT_FILL = WAFER_NO_PRINT_FILL/);
   assert.match(appJs, /const visualEdgeDies =[\s\S]*partialDies/);
   assert.match(appJs, /const visualNoPrintDies =[\s\S]*excludedDies/);
   assert.doesNotMatch(appJs, /visualPartial\.forEach/);
@@ -252,7 +252,8 @@ test("LogicFolding stack no longer renders dashed inter-layer guide lines", () =
 });
 
 test("LogicFolding projected die grid uses a stronger divider stroke", () => {
-  assert.match(appJs, /const LOGICFOLDING_DIE_STROKE = "rgba\(2, 8, 6, 0\.92\)"/);
+  assert.match(appJs, /const WAFER_DIE_STROKE = "rgba\(4, 10, 15, 0\.76\)"/);
+  assert.match(appJs, /const LOGICFOLDING_DIE_STROKE = WAFER_DIE_STROKE/);
   assert.match(appJs, /const LOGICFOLDING_DIE_STROKE_WIDTH = 1\.05/);
 });
 
@@ -263,7 +264,8 @@ test("LogicFolding renders 8x8 die grids without sampling out good dies", () => 
 
 test("LogicFolding layer brightness stays constant across deep stacks", () => {
   assert.match(appJs, /const LOGICFOLDING_LAYER_ALPHA = 0\.78/);
-  assert.match(appJs, /const LOGICFOLDING_LABEL_FILL = "rgba\(237, 246, 240, 0\.8\)"/);
+  assert.match(appJs, /const CANVAS_TEXT_FILL = "rgba\(244, 248, 251, 0\.9\)"/);
+  assert.match(appJs, /const LOGICFOLDING_LABEL_FILL = CANVAS_TEXT_FILL/);
   assert.doesNotMatch(appJs, /globalAlpha = clamp\(0\.78 - layer/);
   assert.doesNotMatch(appJs, /0\.8 - layer \* 0\.08/);
 });
